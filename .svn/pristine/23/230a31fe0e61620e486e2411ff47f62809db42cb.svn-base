@@ -1,0 +1,215 @@
+/**
+ * 视频监控编译 文件
+ *
+ * Created by liufangzhou on 2017/3/22.
+ */
+
+
+var deps = {
+
+	Core: {
+		src: [
+			'MapView/MapView.js',
+		],
+		desc: '版权说明文件.'
+	},
+
+	MapView: {
+
+		src: [
+			// 外部配置基础库
+			'Unit/TrackHelper.js',
+
+			// 基础菜单内容
+			'MapView/Menu/BaseMenu.js',
+
+			// 小部分 右边小部分
+			'MapView/TabPanel/BaseTabPanel.js',
+
+			// 设备树控制
+			'MapView/TabPanel//BaseTreeView.js',
+
+			// 车辆列表和分页控件
+			'MapView/TabPanel/BasePager.js',
+			'MapView/TabPanel/BaseLst.js',
+
+			// 地图基础控件
+			'MapView/PageContent/LayoutContent.js',
+
+
+		],
+
+		desc: '地图实时监控, 概览页面',
+		deps: ['Core']
+	},
+
+	WTM:{
+		src: [
+			'MapView/Menu/WTM/Menu.js',
+			'MapView/TabPanel/WTM/TabPanel.js',
+			'MapView/TabPanel/WTM/DeptTreeView.js',
+			'MapView/TabPanel/WTM/VehLst.js',
+			'MapView/Layer/VehRealTrack/LiveMange.js',
+			'MapView/Layer/VehRealTrack/MapLive.js',
+			'MapView/System/WTMMain.js'
+		],
+		desc: '地图实时监控, 概览页面',
+		deps: ['MapView']
+
+	},
+
+	Muck:{
+		src: [
+			'Unit/HubSvr.js',
+			'Unit/Timer.js',
+			'Unit/Lang.js',
+			'MapView/Menu/Muck/Menu.js',
+            'MapView/PageContent/Monitor/BaseMonitor.js',
+            'MapView/PageContent/Tool/VehicleMonitor.js',
+            'MapView/PageContent/Tool/SiteMonitor.js',
+            'MapView/PageContent/Tool/UnloadMonitor.js',
+            'MapView/PageContent/Tool/SuspicSiteMonitor.js',
+            'MapView/PageContent/Tool/SuspicUnloadMonitor.js',
+            'MapView/PageContent/Tool/TypeExample.js',
+
+			'MapView/TabPanel/Muck/TabPanel.js',
+			'MapView/TabPanel/Muck/DeptTreeView.js',
+            'MapView/TabPanel/Muck/SiteTreeView.js',
+
+			'MapView/TabPanel/Muck/VehLst.js',
+            'MapView/TabPanel/Muck/DeptVehLst.js',
+            'MapView/TabPanel/Muck/AlarmTypes.js',
+            'MapView/TabPanel/Muck/SiteVehLst.js',
+            'MapView/TabPanel/Muck/UnloadVehLst.js',
+            'MapView/TabPanel/Muck/SuspicUnloadVehLst.js',
+            'MapView/TabPanel/Muck/SuspicSiteVehLst.js',
+            'MapView/TabPanel/Muck/AlarmVehLst.js',
+
+			'MapView/Layer/Muck/LiveMange.js',
+			'MapView/Layer/Muck/MapLive.js',
+			'MapView/Layer/Muck/VehClusterLayer.js',
+			'MapView/Layer/Muck/SiteLayer.js',
+            'MapView/Layer/Muck/UnloadLayer.js',
+            'MapView/Layer/Muck/SuspicUnloadLayer.js',
+            'MapView/Layer/Muck/SuspicSiteLayer.js',
+
+			'MapView/Layer/Muck/PopSiteInfo.js',
+            'MapView/Layer/Muck/PopUnloadInfo.js',
+
+
+
+		],
+		desc: '地图实时监控, 概览页面',
+		deps: ['MapView']
+
+	},
+
+
+	MapViewFrameTab:{
+		src: [
+			// 图层管理
+			'MapView/PopTabPage/FrameTab.js',
+			'MapView/PopTabPage/VehDetail.js',
+
+			'MapView/VehInfo/VehInfo.js',
+			'MapView/VehInfo/RealStatusNj.js',
+			'MapView/VehInfo/SpeedChart.js',
+			'MapView/VehInfo/VehInfoView.js',
+			'MapView/VehInfo/WeightChart.js',
+			'MapView/VehInfo/AlarmGridLst.js',
+			'MapView/VehInfo/MapLive.js',
+			'MapView/VehInfo/MapMonitor.js',
+			'MapView/VehInfo/SpeedLineChart.js',
+			'MapView/System/MuckMain.js'
+		],
+
+		desc: '地图实时监控, 概览页面',
+		deps: ['Muck']
+	},
+    MapViewGPSFrameTab:{
+        src: [
+            // 图层管理
+            'MapView/PopTabPage/FrameTab.js',
+            'MapView/PopTabPage/VehDetail.js',
+
+            'MapView/VehInfo/VehInfo.js',
+            'MapView/VehInfo/RealStatusNj.js',
+            'MapView/VehInfo/SpeedChartGPS.js',
+            'MapView/VehInfo/VehInfoView.js',
+            'MapView/VehInfo/WeightChart.js',
+            'MapView/VehInfo/AlarmGridLst.js',
+            'MapView/VehInfo/MapLiveGPS.js',
+            'MapView/VehInfo/MapMonitor.js',
+            'MapView/VehInfo/SpeedLineChart.js',
+            'MapView/System/GPSMuckMain.js'
+        ],
+
+        desc: 'GPS地图实时监控, 概览页面',
+        deps: ['Muck']
+    },
+
+    BHTMap:{
+        src:[
+            'Unit/HubSvr.js',
+            'Unit/Timer.js',
+            'Unit/Lang.js',
+            'MapView/Box/BHTSearch.js',
+            'MapView/Menu/Muck/Menu-BHT.js',
+            'MapView/PageContent/Monitor/BaseMonitor.js',
+            'MapView/PageContent/Tool/VehicleMonitor.js',
+            'MapView/PageContent/Tool/SiteMonitor.js',
+            'MapView/PageContent/Tool/UnloadMonitor.js',
+            'MapView/PageContent/Tool/SuspicSiteMonitor.js',
+            'MapView/PageContent/Tool/SuspicUnloadMonitor.js',
+            'MapView/PageContent/Tool/TypeExample-BHT.js',
+
+            'MapView/TabPanel/Muck/TabPanel.js',
+            'MapView/TabPanel/Muck/DeptTreeView.js',
+            'MapView/TabPanel/Muck/SiteTreeView.js',
+
+            'MapView/TabPanel/Muck/VehLst-BHT.js',
+            'MapView/TabPanel/Muck/DeptVehLst.js',
+            'MapView/TabPanel/Muck/AlarmTypes-BHT.js',
+            'MapView/TabPanel/Muck/SiteVehLst-BHT.js',
+            'MapView/TabPanel/Muck/UnloadVehLst-BHT.js',
+            'MapView/TabPanel/Muck/SuspicUnloadVehLst.js',
+            'MapView/TabPanel/Muck/SuspicSiteVehLst.js',
+            'MapView/TabPanel/Muck/AlarmVehLst-BHT.js',
+
+            'MapView/Layer/Muck/LiveMange.js',
+            'MapView/Layer/Muck/MapLive.js',
+            'MapView/Layer/Muck/VehClusterLayer.js',
+            'MapView/Layer/Muck/SiteLayer.js',
+            'MapView/Layer/Muck/UnloadLayer.js',
+            'MapView/Layer/Muck/SuspicUnloadLayer.js',
+            'MapView/Layer/Muck/SuspicSiteLayer.js',
+
+            'MapView/Layer/Muck/PopSiteInfo.js',
+            'MapView/Layer/Muck/PopUnloadInfo.js',
+
+            // 图层管理
+            'MapView/PopTabPage/FrameTab.js',
+            'MapView/PopTabPage/VehDetail.js',
+
+            'MapView/VehInfo/VehInfo.js',
+            'MapView/VehInfo/RealStatusNj-BHT.js',
+            'MapView/VehInfo/SpeedChart.js',
+            'MapView/VehInfo/VehInfoView.js',
+            'MapView/VehInfo/WeightChart.js',
+            'MapView/VehInfo/AlarmGridLst.js',
+            'MapView/VehInfo/MapLive.js',
+            'MapView/VehInfo/MapMonitor.js',
+            'MapView/VehInfo/SpeedLineChart.js',
+            'MapView/System/MuckMain-BHT.js'
+        ],
+        desc: '白鹤滩地图实时监控, 概览页面',
+        deps: ['MapView']
+    },
+
+
+};
+
+
+if (typeof exports !== 'undefined') {
+	exports.deps = deps;
+}

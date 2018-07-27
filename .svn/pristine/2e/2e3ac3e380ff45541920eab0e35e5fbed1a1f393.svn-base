@@ -1,0 +1,213 @@
+/**
+ * 弹出层的解决方案
+ * 新增 修改
+ * Created by YANGHANG on 2017/9/1.
+ */
+
+
+
+
+ES.Common.EditAnnual =ES.Common.DialogEdit.extend({
+
+    afterOpen:function(id) {
+        var cHtml = '<ul class="ec-avg-sm-1 AnnualModel">' +
+                    '   <li class="ec-form-group">'+
+                    '      <label class="ec-u-sm-2 ec-form-label ec-padding-right-0 ec-text-right">变更确认：</label>'+
+                    '      <div class="ec-u-sm-10">'+
+                    '           <label for="AnnualOK" class="ec-radio-inline ec-success ec-margin-right-lg">'+
+                    '           <input type="radio" id="AnnualOK" name="form-radio" class="ec-ucheck-radio ec-margin-right-lg" checked="checked">同意</label>'+
+                    '           <label for="AnnualNO" class="ec-radio-inline ec-success">'+
+                    '           <input type="radio" id="AnnualNO" name="form-radio" class="ec-ucheck-radio">不同意</label>'+
+                    '      </div> ' +
+                    '   </li>' +
+                    '   <li class="ec-form-group">' +
+                    '       <label class="ec-u-sm-2 ec-form-label ec-padding-right-0 ec-text-right">变更意见：</label>' +
+                    '       <div class="ec-u-sm-10">' +
+                    '           <textarea class="ec-radius ec-form-field" id="approvalOpinion" rows="3" style="resize:none"></textarea>' +
+                    '       </div>' +
+                    '   </li>' +
+                    '</ul>';
+        this.setContent(cHtml);
+        $('.AnnualModel input[type="checkbox"], input[type="radio"]').uCheck();
+    },
+
+    save: function () {
+
+
+
+        ES.loadAn($(this.oDialog.node));
+        var remark = $('#approvalOpinion').val();
+        var AnnualSta = document.getElementById('AnnualOK').checked
+        if(AnnualSta){
+            ES.getData({companyId:this.oOption.ResourceId,vehids:this.oBusData,remark:remark},this.oOption.cUrl,this.saveHandler,this);
+        }else{
+            if (this.oOption.bRemove) {
+                this.oDialog.remove();
+            }
+            else {
+                this.oDialog.close();
+            }
+        }
+    },
+    saveHandler: function (oData) {
+        ES.Common.DialogEdit.prototype.saveHandler.call(this,oData);
+        if(oData.IsSuccess) {
+            this._oParent.oGrid.query({});
+        }
+    },
+    editShow: function (oData) {
+        this.oBusData = oData;
+        this.oDialog.title(this.oOption.title);
+
+        this.oDialog.showModal();
+    },
+});
+
+
+
+ES.Common.EditAssigned =ES.Common.DialogEdit.extend({
+
+    afterOpen:function(id) {
+        var cHtml = '<ul class="ec-avg-sm-1 AssignedModel">' +
+            '   <li class="ec-form-group">'+
+            '       <label class="ec-u-sm-3 ec-form-label ec-padding-right-0 ec-text-right">车牌号：</label>'+
+            '       <div class="ec-u-sm-9">'+
+            '           <p class="VehNo">'+ this.oOption.VehNo +'</p>'+
+            '       </div>' +
+            '   </li>' +
+            '   <li class="ec-form-group">'+
+            '       <label class="ec-u-sm-3 ec-form-label ec-padding-right-0 ec-text-right">现所属企业：</label>'+
+            '       <div class="ec-u-sm-9">'+
+            '           <p class="ResourceName">'+ this.oOption.ResourceName +'</p>'+
+            '       </div>' +
+            '   </li>' +
+            '   <li class="ec-form-group">'+
+            '      <label class="ec-u-sm-3 ec-form-label ec-padding-right-0 ec-text-right"> 选择变更企业：</label>'+
+            '      <div class="ec-u-sm-6 ec-u-sm-pull-3"><input type="text" id="SeResourceName" name="form-sitename"  placeholder="请输入变更企业" class="ec-form-field ec-radius ec-input-sm">'+
+            '      </div>'+
+            '   </li>'+
+            '</ul>';
+        this.setContent(cHtml);
+        this._oParent.oResourceSelectTree = new ES.Common.SelectTreeResource(this, {
+            cBandSel: $('#SeResourceName')
+        }, this.oOption.oTreeOption);
+        $('.AssignedModel').parents('.ui-dialog-body').css('overflow','visible');
+        this._oParent.oResourceSelectTree.on('selectVal', this.setVal, this);
+    },
+
+    save: function () {
+        ES.loadAn($(this.oDialog.node));
+        ES.getData({companyId:this.oOption.SeResourceId,vehids:this.oBusData},this.oOption.cUrl,this.saveHandler,this);
+
+    },
+
+    saveHandler: function (oData) {
+        ES.Common.DialogEdit.prototype.saveHandler.call(this,oData);
+        if(oData.IsSuccess) {
+            this._oParent.oGrid.query({});
+            this._oParent.oTree.reload();
+        }
+    },
+    editShow: function (oData) {
+        this.oBusData = oData;
+        this.oDialog.title(this.oOption.title);
+
+        this.oDialog.showModal();
+    },
+    setVal:function(oData){
+
+        if(oData.parents.length<3){
+            return ;
+        }else{
+            this.oOption.SeResourceId = oData.id;
+            $('#SeResourceName').val(oData.text);
+            $('.ex-cover-tree-select').hide().siblings('div').hide();
+        }
+    }
+});
+
+ES.Common.Detail = ES.Common.BaseDialog.extend({
+
+    afterOpen: function (id) {
+        var oParam = {
+            url: '/Vehicle/Detail',
+            data: this.oBusData,
+            dataType: 'html',
+            type: 'Get'
+        };
+        ES.reqData(oParam, function (oResp) {
+            this.setContent(oResp.rtnData);
+        }, this);
+    },
+    initButton:function(){}
+});
+
+ES.Common.SelectTreeResource = ES.Common.SelectTreeNode.extend({
+    initTree: function () {
+        var self = this;
+        if (!this.oPopTree) {
+            this.oPopTree = new ES.Common.JsTree(this._oParent, {
+                cPContainer: this.oTreeContainer,
+                cCheckUrl:this.oOption.cCheckUrl
+            }, this.oTOption);
+
+            this.oPopTree.readyCallBack = function (e, oThisNode) {
+                //self.initSelectNode();
+                if(self.readyCallBack)
+                {
+                    self.readyCallBack(e, oThisNode);
+                }
+            };
+
+            this.oPopTree.refreshCallBack = function () {
+                //self.clearTree();
+                //this.oSelectTree.on('selectVal',  this.setVal,this);
+                //self.fire('selectVal',node);
+            };
+            this.oPopTree.selectCallBack = function (e, oThisNode) {
+                var node =oThisNode.node;// self.oPopTree.$_oTree.get_node(e.target);
+                self.fire('selectVal',node);
+            };
+            //this.oPopTree.selectCallBack = function () {
+            //    //触发查询
+            //}
+        } else {
+            //self.oPopTree.$_oTree.settings.core.data.url = ES.template(this.oTOption.cTreeUrl, this.oBusData);
+            //self.oPopTree.$_oTree.refresh();
+        }
+    },
+});
+
+
+// 车辆信息编辑
+ES.Common.vehicleEdit = ES.Common.DialogEdit.extend({
+
+    afterOpen: function (id) {
+        var oParam = {
+            url: '/Vehicle/Edit',
+            data: this.oBusData,
+            dataType: 'html',
+            type: 'Get'
+        };
+        ES.reqData(oParam, function (oResp) {
+            this.setContent(oResp.rtnData);
+            if (this.oBusData != null) {
+                $("#VehicleNo").attr("readonly", "readonly");
+                $("#DeviceNo").attr("readonly", "readonly");
+                $("#ResourceTypeName").attr("readonly", "readonly");
+            }
+        }, this);
+    },
+    save: function () {
+        ES.loadAn($(this.oDialog.node));
+        ES.getData($("#frm_vehicleedit").serialize(), "/Vehicle/Edit", this.saveHandler, this);
+    },
+
+    saveHandler: function (oData) {
+        ES.Common.DialogEdit.prototype.saveHandler.call(this, oData);
+        if (oData.IsSuccess) {
+            this._oParent.oGrid.query({});
+            this._oParent.oTree.reload();
+        }
+    }
+});

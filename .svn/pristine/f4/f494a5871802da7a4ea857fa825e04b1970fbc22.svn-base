@@ -1,0 +1,359 @@
+/**
+ * Created by YangHang on 2017/12/20.
+ */
+
+ES.MapView.SuspicSiteMonitor = ES.MapView.BaseMonitor.extend({
+    cHTML:
+    '<div class="ex-layout-monitor-wbox-content ec-align-left ex-lg">' +
+    '<div class="ex-title">' +
+    '     <h2>' +
+    '        <font>{cFlag}<sub>( {cTime} )</sub></font>' +
+    '        <span class="ec-align-right ec-margin-left-sm">' +
+    '              <a href="javascript:void(0);" class="ex-btn-close-left" style="color:#fff;display:none"><i class="ec-icon-arrow-left"></i></a>' +
+    '              <a href="javascript:void(0);" class="ex-btn-close-right" style="color:#fff"><i class="ec-icon-arrow-right"></i></a>' +
+    '          </span>' +
+    '        <div class="ec-btn-group">' +
+    '           <input id="switch-onText" data-size="xs" type="checkbox" checked data-on-text="白班" data-off-text="晚班">' +
+    '        </div>' +
+    '    </h2>' +
+    '</div>' +
+    '   <div class="ex-layout-monitor-charts">' +
+    '       <div class="ex-layout-monitor-charts-content"></div>' +
+    '   </div>' +
+    '   <div class="ex-monitor-road-wbox ec-align-right"></div>' +
+    '</div>',
+    cItem:
+    ' <div class="ex-monitor-wbox">' +
+    '   <div class="box" data-id="{FeatureId}"> ' +
+    '       <i class="icon-tree"></i> ' +
+    '       <div class="ex-scroll-title"><p>{FeatureName}:</p></div> ' +
+    '       <span class="num"><strong>出土 {Count} 次</strong></span>' +
+    '   </div>' +
+    '</div>',
+
+    oOption: {
+        // 父级容器
+        cParentDiv: 'MapView',
+        acParentDivClass: ['ex-layout-monitor-wbox'],
+        // 用来区分当前实体
+        cFlag: '可疑工地违规公司信息',
+
+        cUrl: '/AssetStatic/ReportAssetStatic',
+        //cTime:'2017/12/28 18:00 至现在',
+        cDayHour:5,
+        cNightHour:18,
+        data:{
+            rtnData:{
+                Tech:[
+                    { TypeId:1,TypeName: "洪山区,距离武汉市洪山区毛坦小学159米", Cnt: (Math.floor(Math.random() * 50) + 51), Icon: "Assets" },
+                    { TypeId:2,TypeName: "新洲区,距离武钢集团武汉江北钢铁公司900米", Cnt: (Math.floor(Math.random() * 50) + 1), Icon: "Denoter" },
+                ],
+                TechGroup:[
+                    {Value:[
+                        { TypeId:1,AlarmName: "鄂A111111", Cnt: (Math.floor(Math.random() * 20) + 1), Icon: "Assets" },
+                        { TypeId:2,AlarmName: "鄂A222222", Cnt: (Math.floor(Math.random() * 20) + 1), Icon: "Denoter" },
+                        { TypeId:3,AlarmName: "鄂A333333", Cnt: (Math.floor(Math.random() * 20) + 1), Icon: "Isolated" },
+                        { TypeId:4,AlarmName: "鄂A444444", Cnt: (Math.floor(Math.random() * 20) + 1), Icon: "Gantry" },
+                        { TypeId:5,AlarmName: "鄂A555555", Cnt: (Math.floor(Math.random() * 20) + 1), Icon: "Guide" },
+                        { TypeId:6,AlarmName: "鄂A666666", Cnt: (Math.floor(Math.random() * 20) + 1), Icon: "Traffic" },
+                        { TypeId:6,AlarmName: "鄂A777777", Cnt: (Math.floor(Math.random() * 20) + 1), Icon: "Traffic" },
+                        { TypeId:6,AlarmName: "鄂A888888", Cnt: (Math.floor(Math.random() * 20) + 1), Icon: "Traffic" },
+                    ],TypeId:1,TypeName:'武汉市xx公司',OnlineRate:[
+                        {Name:"违规工地",Value: (Math.floor(Math.random() * 50) + 1),type:1},
+                        {Name:"正常工地",Value:(Math.floor(Math.random() * 50) + 1),type:2}
+                    ]},
+                    {Value:[
+                        { TypeId:1,AlarmName: "鄂A111111", Cnt: (Math.floor(Math.random() * 20) + 1), Icon: "Assets" },
+                        { TypeId:2,AlarmName: "鄂A222222", Cnt: (Math.floor(Math.random() * 20) + 1), Icon: "Denoter" },
+                        { TypeId:3,AlarmName: "鄂A333333", Cnt: (Math.floor(Math.random() * 20) + 1), Icon: "Isolated" },
+                        { TypeId:4,AlarmName: "鄂A444444", Cnt: (Math.floor(Math.random() * 20) + 1), Icon: "Gantry" },
+                        { TypeId:5,AlarmName: "鄂A555555", Cnt: (Math.floor(Math.random() * 20) + 1), Icon: "Guide" },
+                        { TypeId:6,AlarmName: "鄂A666666", Cnt: (Math.floor(Math.random() * 20) + 1), Icon: "Traffic" },
+                        { TypeId:6,AlarmName: "鄂A777777", Cnt: (Math.floor(Math.random() * 20) + 1), Icon: "Traffic" },
+                        { TypeId:6,AlarmName: "鄂A888888", Cnt: (Math.floor(Math.random() * 20) + 1), Icon: "Traffic" },
+                    ],TypeId:2,TypeName:'蔡甸区',OnlineRate:[
+                        {Name:"违规工地",Value: (Math.floor(Math.random() * 50) + 1),type:1},
+                        {Name:"正常工地",Value:(Math.floor(Math.random() * 50) + 1),type:2}
+                    ]}
+                ],
+
+            }
+        }
+
+    },
+
+    // 加载 类型 // 如资产类型
+    initMenuBox: function () {
+        this.nTotal = 0;
+        this.setDefaultData();
+        this.initChart();
+        // 包括资产类型和资产类型数据
+        //ES.Util.reqData({url: this.oOption.cUrl, data: {}}, this.initMenuBoxHandler, this);
+        //this.initMenuBoxHandler(this.oOption.data);
+
+        var self = this;
+        ES.getData({},'/MapView/SuspicStat?type=1',function(data){
+            self.DayData = data.Day;
+            self.NightData = data.Night;
+            self.initMenuBoxHandler(self.DayData);
+            self.removeAn(self.$_oContainer);
+            if(data.Day.length == 0){
+                self.DayNoData = true;
+                self.noData(self.$_oContainer);
+            }else{
+                self.$_oMinitorOpenBtn.click();
+            }
+        })
+
+
+    },
+    // 初始化类型
+    initMenuBoxHandler: function (oData) {
+        if (!oData||oData.length == 0) {
+            if(this.$_oContainer.find('.ex-layout-loading.noData').length ==0){
+                this.noData(this.$_oContainer);
+            }
+            return;
+        }
+
+        if(this.$_oContainer.find('.ex-layout-loading.noData').length !=0){
+            this.removeNoData(this.$_oContainer);
+        }
+
+        if(oData.length == 0){
+            this.$_oChart.hide();
+        }else{
+            this.$_oChart.show();
+        }
+        this.$_oRoadBox.empty();
+        this.oBusData = oData;
+
+        for(var i = 0;i< oData.length;i++) {
+            oData[i].FeatureId = oData[i].Id;
+            oData[i].FeatureName = oData[i].Addr;
+            // 初始化图表和菜单
+            var cLi = ES.template(this.cItem, oData[i]);
+
+            $_oLi = $(cLi);
+            $_oLi.data('data', oData[i]);
+            this.$_oRoadBox.append($_oLi);
+
+        }
+        //this.nTotal = oData[0].Total;
+        this.initEvent();
+    },
+
+    // 要执行父类方法
+    initEvent: function () {
+
+        var self = this;
+        this.$_oRoadBox.find('.ex-monitor-wbox').bind('click', function () {
+            $(this).find('.box').addClass('ec-active');
+            $(this).siblings().find('.box').removeClass('ec-active');
+
+            var dataId = $(this).find('.box').attr('data-id');
+            // 添加数据
+            var oData = null;
+
+            for (var i = 0; i < self.oBusData.length; i++) {
+                if (self.oBusData[i].Id === parseInt(dataId)) {
+                    oData = self.oBusData[i];
+                    break;
+                }
+            }
+            self.updateChart(oData);
+
+            var latlng = {lat:oData.Lat,lng:oData.Lng};
+            var item = $('.suSpicSite .ex-layout-struckbox-content').jstree('get_node', 's'+dataId);
+            if(!item.state.checked){
+                $('.suSpicSite .ex-layout-struckbox-content').jstree('check_node', 's'+dataId);
+                if($('.suSpicSite .ex-layout-struckbox-content').jstree('get_checked').length>1){
+                    self._oParent._oMap.setView( latlng,16);
+                }
+            }else{
+                //定位就行
+                self._oParent._oMap.setView( latlng,16);
+            }
+
+        });
+
+
+        this.$_oRoadBox.find('.ex-monitor-wbox').eq(0).click();
+        if(!this._Interval){
+            this._Interval = window.setInterval(function(){
+                self.$_oRoadBox.find('.ex-scroll-title>p').toggleClass('ec-active');
+            },10000);
+        }else{
+            window.clearInterval(this._Interval);
+            this._Interval = window.setInterval(function(){
+                self.$_oRoadBox.find('.ex-scroll-title>p').toggleClass('ec-active');
+            },10000);
+        }
+
+    }
+
+});
+
+ES.MapView.SuspicSiteMonitor.include({
+
+    // 设置默认值
+    setDefaultData: function () {
+        this.oDeptStatic = [ ];
+        this.aoSer = [];
+        this.aoDept=[];
+        this.nMaxMile =1;
+
+        //this.nTotal = 0
+    },
+
+    // 初始化图表
+    initChart: function () {
+        var oChart = echarts.init(this.$_oChart.get(0));
+        this.oChart = oChart;
+        this.getOption();
+        oChart.setOption(this.oOpt);
+    },
+
+
+    // 更新chart 图表数据
+    updateChart: function (oData) {
+
+        if (!oData) {
+            return;
+        }
+
+        this.aoDept.splice(0, this.aoDept.length);
+        this.aoSer.splice(0, this.aoSer.length);
+        this.aoCompany = oData.Company.Name;
+        this.nTotal = oData.Company.Count;
+
+
+        for (var i = 0; i < oData.Company.Vehs.length; i++) {
+            this.aoDept.unshift(oData.Company.Vehs[i].VehicleNo);
+        }
+        this.aoSer = [];
+
+
+        var aoTemp = [];
+        for (var j = 0; j < oData.Company.Vehs.length; j++) {
+            aoTemp.unshift(oData.Company.Vehs[j].Count);
+            //this.nTotal = this.nTotal + oData.rtnData.Value[i].Count;
+            if (oData.Company.Vehs[j].Count > this.nMaxMile) {
+                this.nMaxMile = oData.Company.Vehs[j].Count;
+            }
+        }
+
+        var oSer = {
+            name:  oData.Company.Name,
+            type: 'bar',
+            stack: 'chart',
+            silent: true,
+            z: 3,
+            label: {
+                normal: {
+                    position: 'right',
+                    show: true,
+                    formatter:'{c}次'
+                }
+            },
+            data: aoTemp
+        }
+
+        this.aoSer.push(oSer);
+
+
+        //var oPie = this.getPieConfig(oData);
+
+        //this.aoSer.push(oPie);
+
+        this.getOption();
+        // 刷新图表
+        this.oChart.setOption(this.oOpt, true);
+    },
+
+    getPieConfig: function (oData) {
+        var aoData =  oData.rtnData.OnlineRate;
+        this.oDeptStatic.splice(0, this.oDeptStatic.length);
+        var oPie = {
+            type: 'pie',
+            radius: [0, '30%'],
+            center: ['75%', '25%'],
+            label: {
+                normal: {
+                    show: false
+                }
+            },
+            data: this.oDeptStatic
+        }
+
+        for(var i=0;i< aoData.length;i++){
+            this.oDeptStatic.push({name:aoData[i].Name,value:aoData[i].Value,itemStyle:{normal:{color:aoData[i].type==1?'#f72b2e':'#2bb743'}}});
+        };
+
+        return oPie;
+    },
+
+
+    // 设置图表参数
+    getOption: function () {
+        // 指定图表的配置项和数据
+        var oOpt = {
+            title: [{
+                text: '<可疑出土最多> \n '+ this.aoCompany ,
+                subtext:'总计 '+ this.nTotal +' 次',
+                x: '50%',
+                textAlign: 'center',
+                textStyle: {
+                    fontSize: 14
+                }
+            },
+                //     {
+                //     text: '违规率',
+                //
+                //     x: '75%',
+                //     textAlign: 'center',
+                //     textStyle: {
+                //         fontSize: 14
+                //     }
+                // }
+            ],
+            tooltip :{
+                formatter: "{b} : {c} ({d}%)"
+            },
+            grid: [{
+                top: 70,
+                width: '90%',
+                bottom: '0',
+                left: 10,
+                containLabel: true
+            }],
+            xAxis: [{
+                type: 'value',
+                max: this.nMaxMile * 1.5,
+                splitLine: {
+                    show: false
+                },
+                axisLabel: {
+                    show: false,
+                },
+
+            }],
+            yAxis: [{
+                type: 'category',
+                data: this.aoDept,
+                axisLabel: {
+                    show: true,
+                },
+                splitLine: {
+                    show: false
+                }
+            }],
+            series: this.aoSer
+        };
+
+        this.oOpt = oOpt;
+    },
+
+
+});
+

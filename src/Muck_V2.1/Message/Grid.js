@@ -1,0 +1,123 @@
+/**
+ * 负责加载grid数据
+ *
+ * Created by liulin on 2017/8/31.
+ */
+ES.Muck.Grid = ES.Common.BaseJqGrid.extend({
+    setColumns: function () {
+        var list = [
+            //{ label: '角色ID', name: 'RoleId', align: 'center', width: 40 },
+            { label: '消息内容', name: 'Content', align: 'center', width: 100 },
+            {
+                label: '接收人', name: 'ReceiveNames', align: 'center', width: 120,
+                formatter: function (val, opt, item) {
+                    if (val) {
+                        return val.replace(/,/g, " ")
+                    }
+                }
+            },
+            { label: '发送时间', name: 'CreateTime', align: 'center', width: 120 },
+            {
+                label: "操作",
+                name: "actions",
+                align: 'center',
+                width: 100,title: false,
+                formatter: function formatHtml(cellValue, options, rowObject) {
+                    var content = '';
+                    //content += '<button class="ec-btn ec-radius ec-btn-xs ec-btn-success editTruck"><i class="ec-icon-truck editTruck"></i> 车辆绑定</button>';
+                    //content += '  ';
+                    content += '<button class="ec-btn ec-radius ec-btn-xs ec-btn-primary detail"'+ MessageAuthBtn.Detail +'><i class="ec-icon-eye detail"></i> 详情</button>';
+                    content += '  ';
+                    content += '<button class="ec-btn ec-btn-xs ec-btn-default ec-radius del"'+ MessageAuthBtn.Del +'><i class="ec-icon-trash-o del"></i> 删除</button>';
+                    return content;
+                }
+            }
+        ];
+        this.aoCol = list;
+    },
+    initClick: function (e, oModel) {
+        if (!e) {
+            return;
+        }
+        if ($(e.target).hasClass('detail')) {
+            this._oParent.oDetailD = new ES.Common.MessageDetail(this._oParent, { bRemove: true, cUrl: '/Message/Edit' }, { title: "消息详情" });
+            this._oParent.oDetailD.showModal(oModel);
+        }
+        // if ($(e.target).hasClass('detail')) {
+        //     this._oParent.oEditD = new ES.Common.Dialog(this._oParent, { bRemove: true, cUrl: '/Message/Edit' });
+        //     this._oParent.oEditD.editShow(oModel);
+        // }
+        if ($(e.target).hasClass('del')) {
+            this._oParent.oDelD = new ES.Common.DelEntity(this._oParent, { bRemove: true, cUrl: '/Message/DeleteMessage' }, {
+                title: '删除操作-发件箱',
+                content: '是否要删除数据！'
+            });
+            this._oParent.oDelD.del({ isSend: true, Id: oModel .Id});
+        }
+    }
+});
+
+ES.Muck.Grid_recive = ES.Common.BaseJqGrid.extend({
+    setColumns: function () {
+        var list = [
+            { label: '消息内容', name: 'Content', align: 'center', width: 100 },
+            { label: '发送人', name: 'CreateName', align: 'center', width: 50,
+                formatter: function (val, opt, item) {
+                    if (val) {
+                        return val.replace(/,/g, " ")
+                    }
+                }
+            },
+            { label: '接收时间', name: 'ReceiveTime', align: 'center', width: 50 },
+            { label: '接收人', name: 'ReceiveName', align: 'center', width: 50,
+                formatter: function (val, opt, item) {
+                    if (val) {
+                        return val.replace(/,/g, " ")
+                    }
+                }
+            },
+            {
+                label: "操作",
+                name: "actions",
+                align: 'center',
+                width: 100,
+                formatter: function formatHtml(cellValue, options, rowObject) {
+                    var content = '';
+                    //content += '<button class="ec-btn ec-radius ec-btn-xs ec-btn-success editTruck"><i class="ec-icon-truck editTruck"></i> 车辆绑定</button>';
+                    //content += '  ';
+                    content += '<button class="ec-btn ec-radius ec-btn-xs ec-btn-primary detail"'+ MessageAuthBtn.RecDetail +'><i class="ec-icon-eye detail"></i> 详情</button>';
+                    content += '  ';
+                    content += '<button class="ec-btn ec-btn-xs ec-btn-default ec-radius del"'+ MessageAuthBtn.RecDel +'><i class="ec-icon-trash-o del"></i> 删除</button>';
+
+                    return content;
+                }
+            }
+        ];
+        this.aoCol = list;
+    },
+
+    initClick: function (e, oModel) {
+        if (!e) {
+            return;
+        }
+        if ($(e.target).hasClass('detail')) {
+            this._oParent.oDetailD = new ES.Common.MessageDetail(this._oParent, { bRemove: true, cUrl: '/Message/Edit' }, { title: "消息详情" });
+            this._oParent.oDetailD.showModal(oModel);
+        }
+        // if ($(e.target).hasClass('detail')) {
+        //   this._oParent.oEditD = new ES.Common.Dialog(this, { bRemove: true, cUrl: '/Message/Edit' });
+        // this._oParent.oEditD.editShow(oModel);
+        //}
+        if ($(e.target).hasClass('del')) {
+            this._oParent.oDelD = new ES.Common.DelEntity(this._oParent, { bRemove: true, cUrl: '/Message/DeleteMessage' }, {
+                title: '删除操作',
+                content: '是否要删除数据！'
+            });
+            this._oParent.oDelD.del({ isSend: false, Id: oModel.Id });
+        }
+    }
+});
+
+
+
+

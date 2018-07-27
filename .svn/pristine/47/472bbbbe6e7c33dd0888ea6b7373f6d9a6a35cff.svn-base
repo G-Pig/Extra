@@ -1,0 +1,95 @@
+/**
+ * Created by YangHang on 2018/1/5.
+ */
+
+
+ES.CloudMap.TypeExample = ES.Evented.extend({
+    oOption: {
+        // 父级容器
+        cParentDiv: 'mapView',
+        acParentDivClass: ['ex-layout-type-wbox'],
+        // 用来区分当前实体
+        cFlag:'地图图例',
+        cUrl:'/MapView/GetSubDeptByTotal',
+    },
+    // 构造函数
+    initialize: function (oParent, options) {
+        ES.setOptions(this, options);
+        this.oPenStyle = this.oOption.oPenStyle;
+        // 获得地图控件
+        this._oParent = oParent;
+        // 初始化界面
+        this.initUI();
+        // 初始化事件
+        this.initOn();
+        this.initBtn();
+        // 设置父级容器的事件，是为了屏蔽地图的操作
+        this.setParentEvent();
+    },
+    // 设置父级容器的事件
+    setParentEvent: function () {
+        ////屏蔽事件
+        L.DomEvent.addListener(this.$_oPContainer.get(0), 'click', L.DomEvent.stopPropagation);
+        L.DomEvent.addListener(this.$_oPContainer.get(0), 'dblclick', L.DomEvent.stopPropagation);
+        L.DomEvent.addListener(this.$_oPContainer.get(0), 'mousemove', L.DomEvent.stopPropagation);
+        L.DomEvent.addListener(this.$_oPContainer.get(0), 'mousewheel', L.DomEvent.stopPropagation);
+        L.DomEvent.addListener(this.$_oPContainer.get(0), 'touchmove', L.DomEvent.stopPropagation);
+    },
+    initUI: function () {
+        this.$_oPContainer = $('.' + this.oOption.acParentDivClass.join('.'));
+        this.$_oContainer = $(ES.template(this.cHTML, this.oOption));
+        this.$_oPContainer.html(this.$_oContainer);
+    },
+    initOn:function(){},
+    initBtn: function () {
+        this.$_oMinitorOpenBtn = this.$_oContainer.find('a.ex-btn-close-left');
+        this.$_oMinitorCloseBtnvar = this.$_oContainer.find('a.ex-btn-close-right');
+
+        this.$_oMinitorCloseBtnvar.show();
+        this.$_oMinitorOpenBtn.hide();
+        this.$_oPContainer.stop().animate({ "right": '1rem' }, 800);
+        //this.$_oList = this.$_oContainer.find('.ex-layout-monitor-wbox-content');
+
+        var nWidth = -(this.$_oPContainer.width() - 6);
+        var self =this;
+        this.$_oMinitorCloseBtnvar.bind('click', function () {
+            self.$_oMinitorOpenBtn.show();
+            $(this).hide();
+            self.$_oPContainer.stop().animate({ "right": nWidth + 32 }, 800);
+        });
+        this.$_oMinitorOpenBtn.bind('click', function () {
+            self.$_oMinitorCloseBtnvar.show();
+            $(this).hide()
+            self.$_oPContainer.stop().animate({ "right": "1rem" }, 800);
+        });
+    },
+});
+
+ES.CloudMap.TypeExample.include({
+    cHTML:
+    '<div class="ex-maptool-type">'+
+    '   <h3>{cFlag}'+
+    '       <span class="ec-align-left ec-margin-right">'+
+    '           <a href="javascript:void(0);" class="ex-btn-close-left" style="color:#fff;display:none;"><i class="ec-icon-arrow-left"></i></a>'+
+    '           <a href="javascript:void(0);" class="ex-btn-close-right" style="color:#fff;"><i class="ec-icon-arrow-right"></i></a>'+
+    '       </span>'+
+    '   </h3>'+
+    '<ul class="ec-list ex-maptool-icon-type ex-maptool-item-type">' +
+    '   <li class="ec-form-group show" data-type="truck-state"><label class="ec-checkbox-inline ec-success"><em class="ex-maptool-icon truck green"></em>  在线车辆 [ 正常车辆 ]</label> </li>' +
+    '   <li class="ec-form-group show" data-type="truck-state"><label class="ec-checkbox-inline ec-success"><em class="ex-maptool-icon truck yellow"></em>  在线车辆 [ 定位失败 ]</label> </li>' +
+    '   <li class="ec-form-group show"  data-type="truck-state"><label class="ec-checkbox-inline ec-success"><em class="ex-maptool-icon truck gray"></em>  离线车辆 [ 通讯中断 ]</label> </li>' +
+    '   <li class="ec-form-group show" data-type="truck-state"><hr /></li>' +
+    '   <li class="ec-form-group show" data-type="site"><label class="ec-checkbox-inline ec-success" data-type="no-report"><em class="ex-maptool-icon site now"></em>  上报正常工地</label></li>'+
+    '   <li class="ec-form-group show" data-type="site"><label class="ec-checkbox-inline ec-success" data-type="no-report"><em class="ex-maptool-icon site temp-site"></em>   上报提前出土工地</label></li>'+
+    '   <li class="ec-form-group show" data-type="site"><label class="ec-checkbox-inline ec-success" data-type="no-report"><em class="ex-maptool-icon site no-report"></em>   上报未出土工地</label></li>'+
+    '   <li class="ec-form-group show" data-type="site"><label class="ec-checkbox-inline ec-success" data-type="no-report"><em class="ex-maptool-icon site alert"></em>   未上报出土工地</label></li>'+
+    '   <li class="ec-form-group show" data-type="site"><hr /></li>' +
+    '   <li class="ec-form-group show" data-type="unload"><label class="ec-checkbox-inline ec-success" data-type="no-report"><em class="ex-maptool-icon unload normal"></em>   正常消纳点</label></li>'+
+    '   <li class="ec-form-group show" data-type="unload"><hr /></li>' +
+    '   <li class="ec-form-group show" data-type="suspicSite"><label class="ec-checkbox-inline ec-success" data-type="no-report"><em class="ex-maptool-icon site hacked"></em>   可疑出土工地</label></li>'+
+    '   <li class="ec-form-group show" data-type="suspicSite"><hr /></li>' +
+    '   <li class="ec-form-group show" data-type="suspicUnload"><label class="ec-checkbox-inline ec-success" data-type="no-report"><em class="ex-maptool-icon unload hacked"></em>   可疑消纳点</label></li>'+
+    '   <li class="ec-form-group show" data-type="suspicUnload"><hr /></li>' +
+    '</ul>' +
+    '</div>'
+});

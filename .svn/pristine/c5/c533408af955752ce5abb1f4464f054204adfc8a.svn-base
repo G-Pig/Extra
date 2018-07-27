@@ -1,0 +1,96 @@
+/**
+ * 页面的操作类
+ * Created by liulin on 2017/8/31.
+ */
+
+ES.Muck.AreaVehAlerm=ES.Page.extend({
+
+    initialize: function (cId, oOption, oGridOpt) {
+        var url = '/Reports/GetAlermByTypes';
+        this.oGridOpt = {url:url};
+        //this.oGridOpt = oGridOpt;
+        this.cId = cId;
+        this.initUI();
+        this.initEvent();
+        this.initNav();
+        this.initEchart();
+
+    },
+
+    // 初始画界面对象
+    initUI: function () {
+        var self = this;
+        // 页面布局
+        this.oLayout = new ES.Muck.Layout(this,{});
+        // grid 查询
+        this.oGrid = new ES.Muck.Grid(this, {}, this.oGridOpt);
+
+        var nW = $('.ex-layout-content').width();
+        var nH = $('.ex-layout-content').height() - $('.ex-top-charts').height() - $('.ex-layout-form-search').height()-80;
+
+        this.oGrid.initGrid({ width: nW, height: nH});
+
+        // 查询 控件
+        this.oSearch = new ES.Muck.Search(this, {});
+
+        // 左边树结构
+        this.oTree = new ES.Muck.Tree(this, {}, {
+            core: {
+                'animation': 0,
+                'check_callback': true,
+                'state': {'opened': true},
+                'data': {
+                    url: '/Enterprise/Tree?bindveh=1',
+                    type: 'POST'
+                }
+            },
+            checkbox:{
+                tie_selection:false,
+            },
+
+            plugins: [ 'types', 'search', 'state','unique']
+        });
+    },
+    initEvent: function (id) {
+        var self= this;
+        $("li.ableClick").click(function (e) {
+            $("li.ableClick").removeClass("ec-active");
+            $(this).addClass("ec-active");
+            var AlarmType;
+            var iAlarmType = $('li.ec-active .item-data>p>b').attr('id');
+            var nType = $('#nType').val();
+            if(iAlarmType == "isFrontDoor"){AlarmType = 100}
+            if(iAlarmType == "OverSpeed"){AlarmType = 106}
+            if(iAlarmType == "OverWeight"){AlarmType = 101}
+            if(iAlarmType == "Overline"){AlarmType = 107}
+            var treeNode = self.oTree.$_oTree.get_selected();
+            var oParam = {
+                deptId:treeNode.toString(),
+                nType:nType,
+                AlarmType:AlarmType
+            };
+            // 触发查询
+            self.oGrid.query({oParam: oParam});
+        });
+    },
+    // 初始化第一条记录
+    initNav: function () {
+        $("li.ableClick").eq(0).click();
+    },
+    //渲染echarts
+    initEchart:function(oData){
+        var self = this;
+        if(oData){
+            $.post("/Reports/GetAreaVehAlerm?nType="+oData.nType+"&deptId="+oData.deptId+"&AlarmType="+oData.AlarmType, function (data) {
+                $('#online_veh').text(data.online_veh);
+                $('#online_veh_').text(data.online_veh_);
+                $('#isFrontDoor').text(data.isFrontDoor_total);
+                $('#OverSpeed').text(data.isOverSpeed_total);
+                $('#OverWeight').text(data.isOverWeight_total);
+                $('#Overline').text(data.isOverline_total);
+                ES.removeAn($('.ex-layout-main'));
+                self.initNav();
+            });
+        }
+    }
+});

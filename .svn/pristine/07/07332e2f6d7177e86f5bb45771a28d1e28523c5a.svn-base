@@ -1,0 +1,408 @@
+/**
+ * Created by YangHang on 2017/12/20.
+ *
+ * 工地图层操作
+ *  可疑工地
+ *
+ */
+
+
+
+ES.MapView.SuspicSiteLayer = L.MapLib.MapMaster.MapOpr.extend({
+
+    //执行画点，画线操作
+    oOption: {
+        onEvenSetData: 'MV:SuspicSite.setSiteData',
+        onEvenSetStatusData: 'MV:SuspicSite.setStatusData',
+        onEvenClearSites: 'MV:SuspicSite.clearSites',
+
+        cHtml: '<div class="{cCls}"><div class="{cBCls}"></div><div class="{cTCls}">{Name}</div></div>'
+    },
+
+    initialize: function (oParent, oOption) {
+        L.MapLib.MapMaster.MapOpr.prototype.initialize.call(this, oParent, {});
+        ES.setOptions(this, oOption);
+        // 执行自己的方法
+        this._initGroup();
+        this._loadOn();
+    },
+
+    // 初始化Group
+    _initGroup: function () {
+
+        //把所有的圆点区域绘制在分组图层中
+        this._oSuspicSiteGroup = L.layerGroup();
+        this._oMap.addLayer(this._oSuspicSiteGroup);
+
+        this._oPolygonSuspicSiteGroup = L.layerGroup();
+        this._oMap.addLayer(this._oPolygonSuspicSiteGroup);
+
+        this.aoSuspicSiteInfo = null;
+    },
+
+    //初始化时加载数据
+    _loadOn: function () {
+
+        //this._oParent.fire('MV:Site.setSiteData', { aoSuspicSiteInfo: oData });
+        //给界面赋值，并画工地
+        this._oParent.on(this.oOption.onEvenSetData, this.setSiteData, this);
+
+        // 通过id获得工地数据
+        this._oParent.on("SuspicSiteTree:layer", this.getSiteId, this);
+
+        this._oParent.on("unSuspicSiteTree:layer", this.getUncheckSiteId, this);
+
+        // 设置工地状态
+        this._oParent.on(this.oOption.onEvenSetStatusData, this.setStatusData, this);
+
+        //监听地图放大缩小时间
+        this._oMap.on("zoomend", this.drawSites, this);
+
+        // 清除工地
+        this._oParent.on(this.oOption.onEvenClearSites, this.clearSites, this);
+
+        this._oParent.on('SiteLayer:clearAll', this.clearAll, this);
+    },
+
+    getUncheckSiteId: function (oData) {
+        var anId = [];
+        for (var i = 0; i < oData.acUncheckId.length; i++) {
+            if (oData.acUncheckId[i].indexOf('s') !== 0) {
+                continue;
+            }
+            anId.push(parseInt( oData.acUncheckId[i].replace('s', '')));
+        }
+        this.clearSites({anId:anId});
+    },
+
+    getSiteId: function (oData) {
+        // var acSiteId = oData.acId;
+        //
+        // ES.getData({anId: acSiteId}, '/Site/GetSiteByIds', function (oData) {
+        //     this.setSiteData({aoSuspicSiteInfo: oData});
+        // }, this);
+
+        var acSuspicSiteData = oData.acData;
+        for(var i = 0;i<acSuspicSiteData.length;i++){
+            acSuspicSiteData[i].Points =[];
+
+            //var aoLatLng=[];
+            acSuspicSiteData[i].Points.push({lat:acSuspicSiteData[i].lefttop[1],lng:acSuspicSiteData[i].lefttop[0]},
+                {lat:acSuspicSiteData[i].rightbottom[1],lng:acSuspicSiteData[i].lefttop[0]},
+                {lat:acSuspicSiteData[i].rightbottom[1],lng:acSuspicSiteData[i].rightbottom[0]},
+                {lat:acSuspicSiteData[i].lefttop[1],lng:acSuspicSiteData[i].rightbottom[0]}
+            )
+            //var lats = acSuspicSiteData[i].lat;
+            //var lngs = acSuspicSiteData[i].lng;
+            //acSuspicSiteData[i].Points.push({lat:lats,lng:lngs});
+            acSuspicSiteData[i].Name = acSuspicSiteData[i].name;
+            acSuspicSiteData[i].Id = acSuspicSiteData[i].id;
+        }
+        this.setSiteData({aoSuspicSiteInfo: acSuspicSiteData});
+    },
+
+    clearAll: function () {
+        if (this.aoSuspicSiteInfo && this.aoSuspicSiteInfo.length > 0) {
+
+            this.aoSuspicSiteInfo.splice(0, this.aoSuspicSiteInfo.length);
+        }
+
+        // 清空数据
+        this._oSuspicSiteGroup.clearLayers();
+        this._oPolygonSuspicSiteGroup.clearLayers();
+    },
+
+    // 保存节点状态数据
+    setStatusData: function (oData) {
+        this.aoStatusData = oData.aoStatusData;
+    },
+
+    //设置数据时才进行操作
+    setSiteData: function (oData) {
+        // 把数据保存到界面上
+        this.addSiteData(oData)
+        // 画当前工地
+        this.drawSites(oData);
+    },
+
+    // 画所有工地，数据保护所有工地,存在相同的工地和消纳点就不用画
+    drawSites: function (oData) {
+
+        var aoSuspicSiteInfo = this.aoSuspicSiteInfo;
+        if (!aoSuspicSiteInfo) {
+            return;
+        }
+
+        //获得当前图层层级，如果是1-5层
+        var nZoom = this._oMap.getZoom();
+
+        for (var i = 0; i < aoSuspicSiteInfo.length; i++) {
+            if (!aoSuspicSiteInfo[i].Points || aoSuspicSiteInfo[i].Points.length <= 0) {
+                continue;
+            }
+            if (nZoom <= 4) {
+                this._oSuspicSiteGroup.clearLayers();
+                this._oPolygonSuspicSiteGroup.clearLayers();
+            }
+            else if (nZoom > 4 && nZoom <= 12) {
+                this._oPolygonSuspicSiteGroup.clearLayers();
+                this._drawSiteMarker(aoSuspicSiteInfo[i]);
+            }
+            else {
+                this._oSuspicSiteGroup.clearLayers();
+                this._drawPolygonSite(aoSuspicSiteInfo[i]);
+            }
+        }
+
+
+
+        if (oData.aoSuspicSiteInfo && oData.aoSuspicSiteInfo.length === 1) {
+            var oLayer = this.findLayer(this._oPolygonSuspicSiteGroup,oData.aoSuspicSiteInfo[0].Id);
+            if(oLayer){
+
+                this._oMap.fitBounds(oLayer.getLatLngs());
+            }
+
+            oLayer = this.findLayer(this._oSuspicSiteGroup,oData.aoSuspicSiteInfo[0].Id);
+            if(oLayer){
+                var oLatLng = oLayer.getLatLng();
+                this.flyTo({oGpsInfo: {Lat: oLatLng.lat, Lon: oLatLng.lng}}, {zoom: 16});
+
+            }
+        }
+    },
+
+    // 画单个点
+    _drawSiteMarker: function (oPosInfo) {
+
+        if (!this._oSuspicSiteGroup || !oPosInfo) return;
+
+        var oLayer = this.findLayer(this._oSuspicSiteGroup, oPosInfo.Id);
+        if (oLayer) {
+            return oLayer;
+        }
+
+
+        var oBound = new L.LatLngBounds(oPosInfo.Points);
+        var oLatLng = oBound.getCenter()
+        if (oPosInfo.FenceType == 2) {
+            oLatLng = oPosInfo.Points[0];
+        }
+
+
+        var oIcon = this._getIcon(this._getIconHtml(oPosInfo));
+
+        var oMarker = L.marker(oLatLng, { icon: oIcon });
+
+        oMarker.cId = oPosInfo.Id;
+        oMarker.oPosInfo = oPosInfo;
+
+        oMarker.addTo(this._oSuspicSiteGroup);
+
+        this.initEventForMarker(oMarker);
+
+        return oMarker;
+    },
+
+
+    //给点注册点击事件
+    initEventForMarker: function (oMarker) {
+        if (!oMarker) {
+            return;
+        }
+
+        oMarker.on('click', function () {
+            var oPop = new ES.MapView.PopSiteInfo(this, oMarker.oPosInfo);
+            oPop.showModal();
+        }, this);
+
+    },
+
+    // 画多边形
+    _drawPolygonSite: function (oPosInfo) {
+        if (!this._oPolygonSuspicSiteGroup || !oPosInfo) {
+            return;
+        }
+        var oTemp = this.findLayer(this._oPolygonSuspicSiteGroup, oPosInfo.Id);
+        if (oTemp) {
+            return;
+        }
+
+        var oPolygon = null;
+
+        // 中心点
+        var oLatLng = null;
+        if (oPosInfo.FenceType === 2) {
+            var nZoom = this.oMap.getZoom();
+            var oBPos = this.oMap.options.crs.latLngToPoint(L.latLng(oPosInfo.Points[0]), nZoom);
+            var oEPos = this.oMap.options.crs.latLngToPoint(L.latLng(oPosInfo.Points[1]), nZoom);
+            oPolygon = L.circle(oPosInfo.Points[0], oBPos.distanceTo(oEPos), oInfo.oOption).addTo(this._oPolygonSuspicSiteGroup);
+
+            oLatLng = oPosInfo.Points[0];
+        }
+        else {
+            oPolygon = L.polygon(oPosInfo.Points,  ES.MapView.oConfig.oSuspicSiteConfig).addTo(this._oPolygonSuspicSiteGroup);
+            var oBound = new L.LatLngBounds(oPosInfo.Points);
+            oLatLng = oBound.getCenter();
+            oPolygon.cId = oPosInfo.Id;
+        }
+
+        oPolygon.bindTooltip(oPosInfo.Name).openTooltip();
+        oPolygon.oPosInfo = oPosInfo;
+        this.initEventForMarker(oPolygon);
+        return oPolygon;
+    },
+
+    // 工地数据
+    _getIconHtml: function (oPosInfo) {
+        oPosInfo.cCls = 'ex-monitor-mapicon-site green '
+        oPosInfo.cBCls = 'site-body'
+        oPosInfo.cTCls = 'site-title';
+        // 核准工地
+        if(oPosInfo.SiteType ===1){
+
+            oPosInfo.cCls = 'ex-monitor-mapicon-site green';
+            if(oPosInfo.ApprovalType ===1)
+            {
+                oPosInfo.cCls = 'ex-monitor-mapicon-site green-unearthed';
+            }
+
+            oPosInfo.cBCls = 'site-body'
+
+            oPosInfo.cTCls = 'site-title green';
+        }
+        else if(oPosInfo.SiteType ===2){
+            // 临时工地
+            oPosInfo.cCls = 'ex-monitor-mapicon-site  yellow ';
+            oPosInfo.cBCls = 'site-body'
+            oPosInfo.cTCls = 'site-title green';
+        }
+        else if(oPosInfo.SiteType ===3){
+            // 违规工地
+            oPosInfo.cCls = 'ex-monitor-mapicon-site  red';
+            oPosInfo.cBCls = 'site-body'
+            oPosInfo.cTCls = 'site-title green';
+        }
+        //  核准工地 没有开工
+        else if(oPosInfo.SiteType ===4){
+            // 核准未开工工地
+            oPosInfo.cCls = 'ex-monitor-mapicon-site  gray';
+            oPosInfo.cBCls = 'site-body'
+            oPosInfo.cTCls = 'site-title green';
+        }
+
+        var cHtml = ES.Util.template(this.cHtml, oPosInfo);
+
+        return cHtml;
+    },
+
+    // 画点
+    _getIcon: function (cHtml) {
+
+        var oIcon = L.divIcon({
+            iconSize: [20, 20], iconAnchor: [10, 20],
+            popupAnchor: [-1, -20],
+            className: "",
+            html: cHtml,
+        });
+        return oIcon;
+    },
+
+    // 获得弹出层的内容
+    _getPopHtml: function (oPosInfo) {
+
+        return '';
+    },
+
+    // 清空界面所有的工地数据
+    clearSites: function (oData) {
+        //this.oInfo = null;
+        this.clearPolygonSite(oData);
+        this.clearMarkerSite(oData);
+        this.deleteSite(oData);
+    },
+
+    // 删除对象
+    deleteSite: function (oData) {
+        if (!this.aoSuspicSiteInfo || !oData || !oData.anId || oData.anId.length <= 0) return;
+        var aoSuspicSiteInfo = this.aoSuspicSiteInfo
+        var anId = oData.anId;
+        for (var i = aoSuspicSiteInfo.length - 1; i >= 0; i--) {
+
+            var aoTemp = $.grep(anId, function (k, nIndex) {
+                if (aoSuspicSiteInfo[i].Id === parseInt(k)) {
+                    return true;
+                }
+            })
+            if (!aoTemp || aoTemp.length <= 0) continue;
+
+            aoSuspicSiteInfo.splice(i, 1);
+        }
+    },
+
+    addSiteData: function (oData) {
+        //测试结果
+        if (!this.aoSuspicSiteInfo) {
+            this.aoSuspicSiteInfo = oData.aoSuspicSiteInfo;
+            return;
+        }
+
+        $.merge(this.aoSuspicSiteInfo, oData.aoSuspicSiteInfo);
+
+    },
+
+    clearPolygonSite: function (oData) {
+        var anId = oData.anId;
+        for (var i = 0; i < anId.length; i++) {
+            var oLayer = this.findLayer(this._oPolygonSuspicSiteGroup, anId[i]);
+            if (!oLayer) continue;
+            if (oLayer.oMarker) {
+                this._oPolygonSuspicSiteGroup.removeLayer(oLayer.oMarker);
+            }
+            this._oPolygonSuspicSiteGroup.removeLayer(oLayer);
+        };
+
+
+    },
+
+    clearMarkerSite: function (oData) {
+        var anId = oData.anId;
+        for (var i = 0; i < anId.length; i++) {
+            var oLayer = this.findLayer(this._oSuspicSiteGroup, anId[i]);
+            if (!oLayer) continue;
+            if (oLayer.oMarker) {
+                this._oSuspicSiteGroup.removeLayer(oLayer.oMarker);
+            }
+            this._oSuspicSiteGroup.removeLayer(oLayer);
+        };
+
+
+    },
+
+    // 删除所有的数据
+    clearAllPolygonSite: function (oData) {
+        var anId = oData.anId;
+        for (var i = 0; i < anId.length; i++) {
+            var oLayer = this.findLayer(this._oPolygonSuspicSiteGroup, anId[i]);
+            if (!oLayer) continue;
+            if (oLayer.oMarker) {
+                this._oPolygonSuspicSiteGroup.removeLayer(oLayer.oMarker);
+            }
+            this._oPolygonSuspicSiteGroup.removeLayer(oLayer);
+        }
+    },
+
+});
+
+
+ES.MapView.SuspicSiteLayer.include({
+    cHtml:
+    '<div class="ex-monitor-mapicon-site hacked">' +
+    '   <div class="pin-tip" style="display: none;">' +
+    '       <div class="pin-dome"><b></b><c></c><d></d></div>' +
+    '       <div class="pin-number">{Name}</div>' +
+    '   </div>' +
+    '   <div class="site-body">' +
+    '   </div>' +
+    '</div>'
+});

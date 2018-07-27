@@ -1,0 +1,341 @@
+/**弹出层审核、详情、下单、新增 */
+ES.Common.Examine = ES.Evented.extend({
+    initialize: function (oParent, oOption, oDOption) {
+        ES.setOptions(this, oOption);
+        this.initButton();
+        this.initDialog();
+        this.initEvent();
+        this.initUI();
+    },
+    initDialog: function () {
+        var oDOption = {
+            fixed: true,
+            align: 'right bottom',
+            title: '审核',
+            content: template('examineReport', this.oOption.oModel)
+        };
+        ES.extend(oDOption, this.oDOption)
+        var oDiaLog = dialog(oDOption);
+        this.oDialog = oDiaLog;
+        return oDiaLog;
+    },
+    showModal: function (oData) {
+        this.oBusData = oData;
+        this.oDialog.showModal();
+    },
+    // 初始化界面对象
+    initUI: function () {
+
+    },
+    initEvent: function () {
+        if (!this.oDialog) {
+            return;
+        }
+        var self = this;
+        this.oDialog.addEventListener('show', function () {
+            if (self.afterOpen) {
+                self.afterOpen();
+            }
+        });
+
+        this.oDialog.addEventListener('close', function () {
+            if (self.afterClose) {
+                self.afterClose();
+            }
+        });
+    },
+    //初始化确定取消按钮
+    initButton: function () {
+        var self = this;
+        var aoButton = [
+            {
+                value: "审核通过",
+                callback: function () {
+                    self.save();
+                    return false;
+                },
+                autofocus: true
+            },
+            {
+                value: ES.Lang.BaseDialog[2],//取消
+                callback: function () {
+                    if (self.oOption.bRemove) {
+                        this.remove();
+                    }
+                    else {
+                        this.close();
+                    }
+                    return false;
+                }
+            },
+        ];
+        this.oDOption.button = aoButton;
+    },
+    save: function () {
+        //ES.loadAn($(this.oDialog.node));
+        //ES.getData({}, "", this.saveHandler, this);
+    },
+
+    saveHandler: function (oData) {
+        ES.Common.DialogEdit.prototype.saveHandler.call(this, oData);
+        if (oData.IsSuccess) {
+            this._oParent.oGrid.query({});
+        }
+    },
+});
+
+//详情弹窗页
+ES.Common.Detail = ES.Common.BaseDialog.extend({
+    afterOpen: function (id) {
+        this.oModelGrid = new ES.Muck.InDetailGrid(this, {
+            // 容器
+            cContainer: '.ex-Permit-VehicleModel',
+            // grid id
+            cGridContainer: 'VehicleModelGridContainer',
+            // 分页菜单id
+            cPagerContainer: 'VehicleModelGridToolBarContainer',
+        }, {
+            url: '',
+            postData:{
+                exparameters: {
+                    UploadSiteId: this.oBusData
+                }
+            },
+            multiselect: false,
+            rowNum: 100000
+        });
+        var nW = $('.ex-Permit-VehicleModel').width();
+        var nH = $('.ex-Permit-VehicleModel').parent().height() - 225;
+
+        this.oModelGrid.initGrid({ width: nW, height: nH });
+    },
+    del: function (oData) {
+        this.oBusData = oData;
+        this.hideFooter();
+        this.oDialog.showModal();
+    }
+});
+
+//详情里的详情
+ES.Common.InDetail = ES.Evented.extend({
+    initialize: function (oParent, oOption, oDOption) {
+        ES.setOptions(this, oOption);
+        this.initDialog();
+    },
+    initDialog: function () {
+        var oDOption = {
+            fixed: true,
+            align: 'right bottom',
+            title: '报装信息',
+            content: template('inDetail', this.oOption.oModel)
+        };
+        ES.extend(oDOption, this.oDOption)
+        var oDiaLog = dialog(oDOption);
+        this.oDialog = oDiaLog;
+        return oDiaLog;
+    },
+    showModal: function (oData) {
+        this.oBusData = oData;
+        this.oDialog.showModal();
+    },
+});
+
+//上报和批量上报
+ES.Common.GetDone = ES.Common.DialogDel.extend({
+    saveHandler: function (oData) {
+        ES.Common.DialogDel.prototype.saveHandler.call(this,oData);
+        if(oData.IsSuccess) {
+            this._oParent.oGrid.query({});
+        }
+    }
+});
+//新增
+ES.Common.AddDialog = ES.Evented.extend({
+    initialize: function (oParent, oOption, oDOption) {
+        ES.setOptions(this, oOption);
+        this.oDOption = {};
+        this.initButton();
+        this.initDialog();
+        this.initEvent();
+        this.initUI();
+        this.oEnterpriseTree = new ES.Common.SelectTreeNodeW(null, { cBandSel: $("#EnterpriceInside") },
+            {
+                core: {
+                    'animation': 0,
+                    'check_callback': true,
+                    'state': { 'opened': true },
+                    'data': {
+                        'url': '/Enterprise/Tree',
+                    }
+                },
+                plugins: ["search"],
+            });
+        this.oEnterpriseTree.on("selectVal", function (oData) {
+            $("#s_h_EnterpriceInside").val(oData.id);
+            $("#EnterpriceInside").val(oData.text);
+            $('.ex-cover-tree-select').hide().siblings('div').hide();
+        });
+    },
+    initDialog: function () {
+        var oDOption = {
+            fixed: true,
+            align: 'right bottom',
+            title: '新增车辆报装',
+            content: template('addNewReport', this.oOption.oModel)
+        };
+        ES.extend(oDOption, this.oDOption)
+        var oDiaLog = dialog(oDOption);
+        this.oDialog = oDiaLog;
+        return oDiaLog;
+    },
+    showModal: function (oData) {
+        this.oBusData = oData;
+        this.oDialog.showModal();
+    },
+    // 初始化界面对象
+    initUI: function () {
+        // 上传图片按钮
+        this.oDialogBtn = new ES.Muck.AddDialogBtn(this, {});
+    },
+    initEvent: function () {
+        if (!this.oDialog) {
+            return;
+        }
+        var self = this;
+        this.oDialog.addEventListener('show', function () {
+            if (self.afterOpen) {
+                self.afterOpen();
+            }
+        });
+
+        this.oDialog.addEventListener('close', function () {
+            if (self.afterClose) {
+                self.afterClose();
+            }
+        });
+    },
+    //初始化确定取消按钮
+    initButton: function () {
+        var self = this;
+        var aoButton = [
+            {
+                value: '确定上报',
+                callback: function () {
+                    self.save();
+                    return false;
+                },
+                autofocus: true
+            },
+            {
+                value: ES.Lang.BaseDialog[2],//取消
+                callback: function () {
+                    if (self.oOption.bRemove) {
+                        this.remove();
+                    }
+                    else {
+                        this.close();
+                    }
+                    return false;
+                }
+            },
+        ];
+        this.oDOption.button = aoButton;
+    },
+    save: function () {
+        //ES.loadAn($(this.oDialog.node));
+        //ES.getData({}, "", this.saveHandler, this);
+    },
+    saveHandler: function (oData) {
+        ES.Common.DialogEdit.prototype.saveHandler.call(this, oData);
+        var oParent = this._oParent;
+        if (oData.IsSuccess) {
+            this._oParent.oGrid.query({});
+            oParent.oEditD = new ES.Common.AfterPage(oParent,{bRemove:true,cUrl:''});
+            oParent.oEditD.showModal();
+        }
+    },
+});
+//完成添加后的页面
+ES.Common.AfterPage = ES.Evented.extend({
+    initialize: function (oParent, oOption, oDOption) {
+        ES.setOptions(this, oOption);
+        this.oDOption = {};
+        this.initButton();
+        this.initDialog();
+        this.initEvent();
+        this.initUI();
+    },
+    initDialog: function () {
+        var oDOption = {
+            fixed: true,
+            align: 'right bottom',
+            title: '车辆报装',
+            content: template('sucessPage', this.oOption.oModel)
+        };
+        ES.extend(oDOption, this.oDOption)
+        var oDiaLog = dialog(oDOption);
+        this.oDialog = oDiaLog;
+        return oDiaLog;
+    },
+    showModal: function (oData) {
+        this.oBusData = oData;
+        this.oDialog.showModal();
+    },
+    // 初始化界面对象
+    initUI: function () {
+    },
+    initEvent: function () {
+        if (!this.oDialog) {
+            return;
+        }
+        var self = this;
+        this.oDialog.addEventListener('show', function () {
+            if (self.afterOpen) {
+                self.afterOpen();
+            }
+        });
+
+        this.oDialog.addEventListener('close', function () {
+            if (self.afterClose) {
+                self.afterClose();
+            }
+        });
+    },
+    //初始化确定取消按钮
+    initButton: function () {
+        var self = this;
+        var aoButton = [
+            {
+                value: '继续报装',
+                callback: function () {
+                    self.save();
+                    return false;
+                },
+                autofocus: true
+            },
+            {
+                value: '查看报装单',
+                callback: function () {
+                    if (self.oOption.bRemove) {
+                        this.remove();
+                    }
+                    else {
+                        this.close();
+                    }
+                    return false;
+                }
+            },
+        ];
+        this.oDOption.button = aoButton;
+    },
+    save: function () {
+        this._oParent.oEditD = new ES.Common.AddDialog(this._oParent,{bRemove:true,cUrl:''});
+        this._oParent.oEditD.showModal();
+    },
+    saveHandler: function (oData) {
+        if (oData.IsSuccess) {
+            ES.Common.DialogEdit.prototype.saveHandler.call(this, oData);
+            this._oParent.oGrid.query({});
+        }
+    },
+});

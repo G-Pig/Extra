@@ -1,0 +1,282 @@
+/**
+ * Created by liulin on 2016/12/20.
+ */
+
+ES.MapView = {};
+ES.MapView.version = '0.1.1';
+
+
+// 存储页面公共的模块
+ES.MapView.Page = ES.Page.extend({
+    //页面id
+    initialize: function (id, options) {
+
+        ES.Page.prototype.initialize.call(this, id, options);
+
+        // 全局对象，用于判断详细页面加载的内容ex-layout-cardetail-content
+        this.$_oDivVehDetail = $('.ex-layout-cardetail');
+        this.initEven();
+
+    },
+    // 权限判定
+    AuthValue:function(oData,ulObj){
+        for(var key in oData){
+            if(oData[key].split(" ")[1].split("=")[1] == "false"){
+                ulObj.find("li[menu-flag='"+key+"']").css('display',"none");
+            }
+        }
+    },
+    // 注册弹出层事件
+    _getVecMarkerHtml: function (oGpsInfo) {
+
+        var cDir = ES.TrackHelper.getDire(oGpsInfo.dir);
+        var cMsg = ES.TrackHelper.getDateMsg(oGpsInfo.gpsTime);
+        var oTemp = {};
+
+        ES.extend(oTemp, oGpsInfo,  {
+            cMsg: cMsg,
+            cDir: cDir,
+            Mileage: oGpsInfo.mile / 1000,
+            cGpsDate: ES.Util.dateFormat(oGpsInfo.gpsTime  , "yyyy-MM-dd hh:mm:ss"),
+            cVehicleStatus: oGpsInfo.sta || '通讯中断',
+            cPoiInfo: oGpsInfo.poi || '',
+            map: oGpsInfo.sta !== '通讯中断'&&oGpsInfo.sta !== '定位失败' ? 'on' : '',
+            key:oGpsInfo.status.accStatus==='1'?'on':'',
+            open:oGpsInfo.status.vehicleDoorStatus==='1'?'on':'',
+            signal:oGpsInfo.sta !== '通讯中断'?'on':'',
+            weight:this.weightStatus(oGpsInfo.weight,oGpsInfo.status)
+        });
+
+        var cHtml =
+            '<div class="ex-maptip-wtm"> ' +
+            '   <div class="ex-maptip-wtm-content">' +
+            '       <div class="ex-content-info-box">' +
+            '            <div class="ex-content-info-car ec-u-sm-6">' +
+            '               <h3>{vehNo}</h3>' +
+            '               <div class="ex-content-img"><img src="{img}" alt="{img}" /></div>' +
+            '               <ul>' +
+            '                   <li><i class="ec-icon-car"></i><span>{entName}</span></li>' +
+            //'                   <li><i class="ec-icon-user"></i><span>{CompanyName}</span></li>' +
+            //'                   <li><i class="ec-icon-map-signs"></i><span>{weigth}</span></li>' +
+            '               </ul>' +
+            '           </div>' +
+            '           <div class="ex-content-info-state ec-u-sm-6">' +
+            '               <ul>' +
+            '                   <li><span>{cGpsDate}{cMsg}</span></li>' +
+            '                   <li><strong>状态：</strong><span>{cVehicleStatus}</span></li>' +
+            '                   <li><strong>速度：</strong><span>{speed} (Km/h)</span></li>' +
+            '                   <li><strong>载重：</strong><span>{weight}</span></li>' +
+            //'                   <li><strong>今日：</strong><span></span></li>' +
+            '                   <li><strong>里程：</strong><span>{Mileage} Km</span></li>' +
+            '                   <li><strong>位置：</strong><span>{cPoiInfo}</span></li>' +
+            '               </ul>' +
+            '           </div>' +
+            '       </div>' +
+            '   </div>' +
+            '   <div class="ex-maptip-wtm-tool">' +
+            '       <ul class="tool-btn ec-avg-sm-3 ec-u-sm-6">' +
+            '           <li><a href="javascript:void(0)" class="ec-btn ec-radius ec-icon-truck"> 详情 </a></li>' +
+            '           <li><a href="javascript:void(0)" class="ec-btn ec-radius ec-icon-exchange"> 轨迹 </a></li>' +
+            '        </ul>' +
+            '       <ul class="tool-state ec-avg-sm-4 ec-u-sm-6">' +
+            '           <li><i class="GPS {map}"></i></li>' +
+            //'           <li><i class="ACC {key}"></i></li>' +
+            '           <li><i class="signal {signal}"></i></li>' +
+            //'           <li><i class="door {open}"></i></li>' +
+            '        </ul>' +
+            '   </div>' +
+            '</div>';
+
+        var cHtml = ES.Util.template(cHtml, oTemp);
+        return cHtml;
+    },
+
+    toHeartModle: function (aoData) {
+        var aoGps = [];
+        if (!aoData ||  aoData.length <= 0) {
+            return aoGps;
+        }
+        var cImg = '/Asset/img/ex_default/law_144.png'
+        if(ES.MapView.oConfig.systemFlag ==='truck')
+        {
+            cImg= '/Asset/img/ex_default/truck_144.png'
+        }
+
+        for (var i = 0; i < aoData.length; i++) {
+            var mapLatLng = aoData[i].Poi.MapPoint;
+            var oModel = {
+                vehNo: aoData[i].VehicleNo,
+                devNo: aoData[i].PhoneNum,
+                latLng: {lat:mapLatLng.Lat,lng:mapLatLng.Lon},
+                gpsDate: aoData[i].GpsDateTime,
+                dir: aoData[i].Direction,
+                poi:  aoData[i].Poi.Address,
+                speed: aoData[i].Speed,
+                status: aoData[i].Status,
+                attach: aoData[i].Property,
+                sta: aoData[i].VehicleStatus,
+                mile: aoData[i].Mileage,
+                gpsTime: ES.Util.toDate(aoData[i].GpsDateTime).getTime(),
+                img:cImg,
+                entName:aoData[i].CompanyName,
+                weight:aoData[i].sWeightValue || aoData[i].Property.ZtWeightValue,
+            };
+            aoGps.push(oModel);
+        }
+
+        return aoGps;
+    },
+    //判断载重
+    weightStatus:function(n,Status){
+        if(!n){n=0}
+        var _weight = parseInt(n);
+
+        if(_weight<=1){
+            return "空载";
+        }else{
+            if($.inArray(15,Status)>=0){
+                return "超载";
+            }else{
+                return "满载";
+            }
+        }
+
+    },
+    getVstatus:function(aoData){
+        if (!aoData ||  aoData.length <= 0) {
+            return ;
+        }
+        for (var i = 0; i < aoData.length; i++) {
+            var Item = aoData[i];
+
+            var Vstatus={acc:0,gps:0};
+            for(var j=0;j<Item.Status.length;j++){
+                if(Item.Status[j]==1){
+                    Vstatus.acc=1;
+                }else if(Item.Status[j]==2){
+                    Vstatus.gps=1;
+                }
+            }
+            //状态判定
+                if( Date.parse(new Date()) - ES.Util.toDate(Item.GpsDateTime).getTime() <= 600000){
+                if(Item.Speed>0 && Vstatus.gps == 1 ){
+                    Item.VehicleStatus="行驶";
+                }else if(Item.Speed == 0 && Vstatus.gps == 1 && Vstatus.acc==0){
+                    Item.VehicleStatus="熄火";
+                }else if(Item.Speed == 0 && Vstatus.gps == 1 && Vstatus.acc==1){
+                    Item.VehicleStatus="停车";
+                }else if(Vstatus.gps == 0){
+                    Item.VehicleStatus="定位失败";
+                }
+            }else{
+                Item.VehicleStatus="通讯中断";
+            }
+
+        }
+
+        return aoData;
+    },
+
+    getDetailStatus: function () {
+        var nFlag = this.$_oDivVehDetail.data("nFlag")
+        return (nFlag || 0);
+    },
+
+    setDetailStatus: function (nFlag) {
+        this.$_oDivVehDetail.data("nFlag", nFlag);
+    },
+
+    initEven: function () {
+        var self = this;
+
+        $(".ex-layout-cardetail-close.ec-close").eq(0).bind('click', this, function () {
+
+            // 显示X按钮
+            self.setBtn0();
+            // 隐藏 实时监控 、轨迹回放
+            self.fire("MapView:VehDetail.hideTrack");
+            // 设置地图高度 h - 0
+            self.fire("MapView:Map.setMapConterH", { nH: 0, nTick: 150 });
+        });
+
+        // 向下箭头
+        $(".ex-layout-cardetail-close.ec-close").eq(1).bind('click', this, function () {
+            // 显示向上箭头
+            self.setBtn2();
+            // 隐藏实时跟踪的
+            self.fire("MapView:TrackLst.hideTrack");
+            //地图显示为 h - 40
+            self.fire("MapView:Map.setMapConterH", { nH: 40, nTick: 150 });
+        });
+
+        $(".ex-layout-cardetail-close.ec-close").eq(2).bind('click', this, function () {
+            // 显示向下按钮
+            self.setBtn1();
+            // 显示实时跟踪的高度
+            self.fire("MapView:TrackLst.reShowTrack");
+
+        })
+    },
+
+    //设置按钮样式
+    setBtn0: function () {
+        //MapShowDetail
+        $("#MapShowDetail>a").eq(0).show();
+        $("#MapShowDetail>a").eq(1).hide();
+        $("#MapShowDetail>a").eq(2).hide();
+    },
+
+    //设置按钮样式
+    setBtn1: function () {
+        //MapShowDetail
+        $("#MapShowDetail>a").eq(0).hide();
+        $("#MapShowDetail>a").eq(1).show();
+        $("#MapShowDetail>a").eq(2).hide();
+    },
+
+    //设置按钮样式
+    setBtn2: function () {
+        //MapShowDetail
+        $("#MapShowDetail>a").eq(0).hide();
+        $("#MapShowDetail>a").eq(1).hide();
+        $("#MapShowDetail>a").eq(2).show();
+    },
+
+    openRight:function(){
+        var _class=$('.ex-layout-sider:visible').width()==220?'ex-hidden-sm':'ex-hidden';
+        $('.ex-layout-menu').removeClass(_class);
+        $('.ex-layout-sider').removeClass(_class);
+        $(window).resize( );
+    },
+
+    hiddenRight:function(){
+        var _class=$('.ex-layout-sider:visible').width()==220?'ex-hidden-sm':'ex-hidden';
+        $('.ex-layout-menu').addClass(_class);
+        $('.ex-layout-sider').addClass(_class);
+        $(window).resize( );
+        // if(!this.hiddenOnce){
+        //     setTimeout(function(){
+        //         $(window).resize( );
+        //         this.hiddenOnce=true;
+        //     },1000)
+        // }
+    },
+
+    rightEvent:function(){
+        var self = this;
+        this.hiddenOnce = false;
+
+        $('.ex-right-switch.hidden').bind('click',function(){
+            self.hiddenRight()
+            $(this).hide().siblings('.open').show();
+        });
+        $('.ex-right-switch.open').bind('click',function(){
+            self.openRight();
+            $(this).hide().siblings('.hidden').show();
+        });
+    }
+});
+
+
+
+

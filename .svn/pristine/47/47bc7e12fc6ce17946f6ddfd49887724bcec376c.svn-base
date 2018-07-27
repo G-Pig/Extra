@@ -1,0 +1,68 @@
+/**
+ * 弹出层的解决方案
+ * 新增 修改
+ * Created by liulin on 2017/9/1.
+ */
+
+
+// 车辆详情
+ES.Common.Detail = ES.Common.BaseDialog.extend({
+
+    afterOpen: function (id) {
+        var oParam = {
+            url: '/Vehicle/Detail',
+            data: this.oBusData,
+            dataType: 'html',
+            type: 'Get'
+        };
+        ES.reqData(oParam, function (oResp) {
+            this.setContent(oResp.rtnData);
+        }, this);
+    },
+    initButton: function () { }
+});
+ES.Common.DelEntity =ES.Common.DialogDel.extend({
+
+    saveHandler: function (oData) {
+        ES.Common.DialogDel.prototype.saveHandler.call(this,oData);
+        if(oData.IsSuccess) {
+            this._oParent.oGrid.query({});
+        }
+    }
+});
+
+// 车辆信息编辑
+ES.Common.vehicleEdit = ES.Common.DialogEdit.extend({
+
+    afterOpen: function (id) {
+        var oParam = {
+            url: '/Vehicle/Edit',
+            data: this.oBusData,
+            dataType: 'html',
+            type: 'Get'
+        };
+        ES.reqData(oParam, function (oResp) {
+            this.setContent(oResp.rtnData);
+            if (this.oBusData != null) {
+                $("#VehicleNo").attr("readonly", "readonly");
+                $("#DeviceNo").attr("readonly", "readonly");
+                $("#ResourceTypeName").attr("readonly", "readonly");
+            }
+        }, this);
+    },
+    save: function () {
+        ES.loadAn($(this.oDialog.node));
+        ES.getData($("#frm_vehicleedit").serialize(), "/Vehicle/Edit", this.saveHandler, this);
+    },
+
+    saveHandler: function (oData) {
+        ES.Common.DialogEdit.prototype.saveHandler.call(this, oData);
+        if (oData.IsSuccess) {
+            this._oParent.oGrid.query({});
+        }
+    }
+});
+
+
+
+

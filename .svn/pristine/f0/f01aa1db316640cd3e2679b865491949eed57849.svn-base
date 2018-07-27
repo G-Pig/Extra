@@ -1,0 +1,45 @@
+/**
+ * Created by YangHang on 2018/1/26.
+ */
+
+
+ES.MapView.PageBHT = ES.MapView.Page.extend({
+    openRight:function(){
+        var _class=$('.ex-layout-sider:visible').width()==220?'ex-hidden-sm':'ex-hidden';
+        $('.ex-layout-menu').removeClass(_class);
+        $('.ex-layout-sider').removeClass(_class);
+        $(window).resize( );
+    },
+
+    hiddenRight:function(){
+        var _class=$('.ex-layout-sider:visible').width()==220?'ex-hidden-sm':'ex-hidden';
+        $('.ex-layout-menu').addClass(_class);
+        $('.ex-layout-sider').addClass(_class);
+        $(window).resize( );
+        // if(!this.hiddenOnce){
+        //     setTimeout(function(){
+        //         $(window).resize( );
+        //         this.hiddenOnce=true;
+        //     },1000)
+        // }
+    },
+
+    rightEvent:function(){
+        var self = this;
+        this.hiddenOnce = false;
+
+        $('.ex-right-switch.hidden').bind('click',function(){
+            self.hiddenRight()
+            $(this).hide().siblings('.open').show();
+        });
+        $('.ex-right-switch.open').bind('click',function(){
+            self.openRight();
+            $(this).hide().siblings('.hidden').show();
+        });
+    }
+
+});
+
+
+
+

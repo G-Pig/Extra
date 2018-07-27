@@ -1,0 +1,215 @@
+/**
+ * 红谷滩编译 文件
+ *
+ * Created by liulin on 2016/12/22.
+ */
+
+
+var deps = {
+
+	Core: {
+		src: [
+			'Track_V2.1/Track.js',
+			'Unit/TrackHelper.js',
+		],
+		desc: '版权说明文件，车辆状态的配置.'
+	},
+
+	TrackView: {
+
+		src: [
+			'Track_V2.1/TrackView/TrackView.js',
+			'Track_V2.1/TrackView/Layout.js',
+			'Track_V2.1/TrackView/Page.js',
+			'Track_V2.1/TrackView/Bar.js',
+			'Track_V2.1/TrackView/Control.js',
+			'Track_V2.1/TrackView/TrackChart.js',
+			'Track_V2.1/TrackView/TrackData.js',
+			'Track_V2.1/TrackView/HistoryTrack.js',
+			'Track_V2.1/TrackView/AlarmTrack.js'
+
+		],
+
+		desc: '历史轨迹页面的基本控制，在page 下进行消息交互',
+		deps: ['Core']
+	},
+
+	BasePanel: {
+		src: [
+
+			'Track_V2.1/TrackView/PanelBox/BasePanel.js',
+		],
+		desc: '页面显示基本组件，可以配置为全有，但是控制是有bar对象来控制',
+		deps: ['Core', 'TrackView']
+	},
+
+	AlarmPanel: {
+		src: [
+
+			'Track_V2.1/TrackView/PanelBox/AlarmPanel.js',
+		],
+		desc: '是否显示告警面板',
+		deps: ['BasePanel']
+	},
+
+	ParkPanel: {
+		src: [
+
+			'Track_V2.1/TrackView/PanelBox/ParkPanel.js',
+		],
+		desc: '是否显示停留面板',
+		deps: ['BasePanel']
+	},
+
+	SpeedDoorWeightPanel: {
+		src: [
+
+			'Track_V2.1/TrackView/PanelBox/SpeedDoorWeightPanel.js',
+		],
+		desc: '是否显示速度、门磁、载重chart面板',
+		deps: ['BasePanel']
+	},
+
+	BaseMarker: {
+		src: [
+
+			'Track_V2.1/TrackView/PointLayer/BaseMarker.js',
+		],
+		desc: '地图上显示点的基础控件',
+		deps: ['Core', 'TrackView']
+	},
+
+	AlarmMarkerMgr: {
+		src: [
+
+			'Track_V2.1/TrackView/PointLayer/AlarmMarkerMgr.js',
+		],
+		desc: '地图上显示告警点',
+		deps: ['BaseMarker']
+	},
+
+	BeginMarker: {
+		src: [
+
+			'Track_V2.1/TrackView/PointLayer/BeginMarker.js',
+		],
+		desc: '地图上显示起点',
+		deps: ['BaseMarker']
+	},
+
+	EndMarker: {
+		src: [
+
+			'Track_V2.1/TrackView/PointLayer/EndMarker.js',
+		],
+		desc: '地图上显示终点',
+		deps: ['BaseMarker']
+	},
+
+	ParkMarkerMgr: {
+		src: [
+
+			'Track_V2.1/TrackView/PointLayer/ParkMarkerMgr.js',
+		],
+		desc: '地图上显示停留点',
+		deps: ['BaseMarker']
+	},
+
+	SubMarkerMgr: {
+		src: [
+
+			'Track_V2.1/TrackView/PointLayer/SubMarkerMgr.js',
+		],
+		desc: '地图上显示分段点',
+		deps: ['BaseMarker']
+	},
+
+	BaseRealTrack: {
+		src: [
+
+			'Track_V2.1/TrackView/RealTrack/BaseRealTrack.js',
+		],
+
+		desc: '实时轨迹点基础对象',
+		deps: ['Core', 'TrackView']
+
+	},
+
+	TrackPos: {
+		src: [
+
+			'Track_V2.1/TrackView/RealTrack/TrackPos.js',
+		],
+
+		desc: '实时点箭头',
+		deps: ['BaseRealTrack']
+
+	},
+
+	TrackArrow: {
+		src: [
+
+			'Track_V2.1/TrackView/RealTrack/TrackArrow.js',
+		],
+
+		desc: '实时点箭头',
+		deps: ['BaseRealTrack']
+
+	},
+
+	TrackLine: {
+		src: [
+
+			'Track_V2.1/TrackView/RealTrack/TrackLine.js',
+		],
+
+		desc: '实时线',
+		deps: ['BaseRealTrack']
+
+	},
+
+	TrackMarkers: {
+		src: [
+
+			'Track_V2.1/TrackView/RealTrack/TrackMarker.js',
+		],
+
+		desc: '实时点',
+		deps: ['BaseRealTrack']
+
+	},
+
+	VehTrackInfo: {
+		src: [
+
+			'Track_V2.1/TrackView/VehTrackInfo/VehTrackInfo.js',
+			'Track_V2.1/TrackView/VehTrackInfo/RealStatus.js',
+			'Track_V2.1/TrackView/VehTrackInfo/SpeedChart.js',
+			'Track_V2.1/TrackView/VehTrackInfo/WeightChart.js',
+		],
+
+		desc: '回放轨迹时 显示车辆实时状态',
+		deps: ['Core', 'TrackView']
+	},
+
+	Muck:{
+        src: [
+
+            'Track_V2.1/TrackView/MuckLayer/SiteLayer.js',
+            'Track_V2.1/TrackView/MuckLayer/UnloadLayer.js',
+            'Track_V2.1/TrackView/MuckLayer/SusSiteLayer.js',
+        ],
+
+        desc: '历史轨迹画工地',
+        deps: ['Core', 'VehTrackInfo']
+
+	}
+};
+
+
+
+
+if (typeof exports !== 'undefined') {
+	exports.deps = deps;
+
+}

@@ -1,0 +1,47 @@
+/**
+ * 左侧树
+ * Created by YangHang on 2017/9/1.
+ */
+ES.SelectRoad.Tree = ES.Common.BaseTree.extend({
+
+    initUI: function () {
+
+        this.$_oContainer = $('#divVeh');
+        this.$_oTreeContainer = this.$_oContainer.find('.ex-layout-struckbox-content.left-tree');
+        this.$_oSearchInput = this.$_oContainer.find('.ex-tree-search-ipt');
+        this.$_oSearchBtn = this.$_oContainer.find('.ex-tree-search-btn');
+    },
+    checkCallBack: function (e, oNode) {
+        this._oParent.fire('RoadTree:layer',{acId:this.getCheckId(),acData:this.getCheckData(this.getCheckId())});
+        this._oParent.appendRoad(this.getCheckData(this.getCheckId()))
+    },
+    uncheckCallBack: function (e, oNode) {
+        this._oParent.fire('unRoadTree:layer',{acId:this.getSelfChildId(),acUncheckId: this.getSelfChildId(oNode.node)});
+        this._oParent.removeRoad(this.getSelfChildId(oNode.node));
+    },
+    getCheckData:function(acId){
+        if (!acId || acId.length <= 0) {
+            return;
+        }
+        var Data = [];
+        for (var i = 0; i < acId.length; i++) {
+            if(acId[i].indexOf("_") >= 0){
+                var _data=this.$_oTree.get_node(acId[i]).data;
+                Data.push(_data);
+            }
+        }
+        return Data;
+
+    },
+    checkAllCallBack:function(){
+        this._oParent.fire('RoadTree:layer',{acId:this.getCheckId(),acData:this.getCheckData(this.getCheckId())});
+    },
+    uncheckAllCallBack:function(){
+        this._oParent.fire('unRoadTree:layer', {acId:this.getCheckId(), acUncheckId: this.getSelfChildId(oNode.node)});
+    },
+    readyCallBack:function () {
+        // this.checkAll();
+        // this.checkCallBack();
+    },
+
+});

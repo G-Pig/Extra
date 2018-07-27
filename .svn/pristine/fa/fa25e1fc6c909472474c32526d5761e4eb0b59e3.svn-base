@@ -1,0 +1,55 @@
+/**
+ * Created by YangHang on 2017/11/17.
+ */
+
+ES.MapView.BaseTabPanel.AlarmTypes = ES.MapView.BaseTabPanel.BaseLst.extend({
+
+    initOn:function(){},
+    // 高级查询
+    initEvent: function () {
+        var self =this;
+        this.$_oitmeUl.on('click','li>a',function(){
+            $(this).parent().addClass('ec-active').siblings().removeClass('ec-active');
+            self._oPage.fire(self.oOption.cCheckEventName,{acId:parseInt($(this).attr('data-id'))});
+            if(self.$_oStruck.siblings().width()==0){
+                self.$_oStruck.siblings().find('a.ex-icon-turn.on').click();
+            }
+        });
+    },
+
+    initUI: function () {
+        // 当前对象集合
+        this.$_oStruck = $(this.cHtml);
+        this.$_oContainer.append(this.$_oStruck);
+        // 车辆容器
+
+        this.$_oTitle = this.$_oStruck.find('h4');
+        this.$_oTitle.html(this.oOption.cTitle);
+        this.$_oitmeUl = this.$_oStruck.find('.ex-mapview-struct-ul')
+        this.initEvent();
+    }
+});
+
+// html数据
+ES.MapView.BaseTabPanel.AlarmTypes.include({
+    cHtml: '<div class="ex-layout-carlist">' +
+    '   <div class="ex-layout-carlist-title">' +
+    '       <h4 class="ec-align-left">车辆列表 [共4000辆]</h4>' +
+    '   </div>' +
+    '   <div class="ex-layout-carlist-wrap">' +
+    '      <div>' +
+    '          <ul class="ex-mapview-struct-ul">'+
+    //'              <li cflag="Ek" class="ms-hover ec-active"><a href="#" data-id="8"><i class="ec-icon-bolt" title="掉电"></i>掉电</a></li>'+
+    //'              <li cflag="open" class="ms-hover"><a href="#" data-id="203"><i class="ec-icon-medium" title="未密闭"></i>未密闭</a></li>'+
+    //'              <li cflag="overload" class="ms-hover"><a href="#" data-id="204"><i class="ec-icon-truck" title="超载车辆"></i>超载车辆</a></li>'+
+    //'              <li cflag="overspeed" class="ms-hover"><a href="#" data-id="106"><i class="ec-icon-tachometer" title="平台超速报警"></i>平台超速报警</a></li>'+
+    //'              <li cflag="siteA" class="ms-hover"><a href="#" data-id="208"><i class="ec-icon-upload" title="可疑出土"></i>可疑出土</a></li>'+
+    //'              <li cflag="unloadA" class="ms-hover"><a href="#" data-id="209"><i class="ec-icon-download" title="可疑消纳"></i>可疑消纳</a></li>'+
+    '              <li cflag="gnssFault" class="ms-hover"><a href="#" data-id="5"><i class="ec-icon-download" title="定位天线被剪断"></i>定位天线被剪断</a></li>' +
+    '              <li cflag="gnssFault" class="ms-hover"><a href="#" data-id="110"><i class="ec-icon-warning" title="路段限速报警"></i>路段限速报警</a></li>' +
+    '              <li cflag="gnssFault" class="ms-hover"><a href="#" data-id="111"><i class="ec-icon-warning" title="非法驾驶报警"></i>非法驾驶报警</a></li>' +
+    '          </ul>' +
+    '      </div>'+
+    '   </div>' +
+    '</div>',
+});

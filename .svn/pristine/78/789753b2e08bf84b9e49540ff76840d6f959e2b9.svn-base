@@ -1,0 +1,48 @@
+/**弹出层的
+ 道闸1: 000000000001    道闸2: 000000000002
+ 摄像机1: 100000000001   摄像机2: 100000000002
+ 抬起道闸 5 落下 6
+ * */
+//闸道
+ES.Common.ShowGate = ES.Common.DialogEdit.extend({
+    save: function () {
+        var oParam = { Text:$('#reasonsText').val(),PhoneNum:"000000000001",Command:5}
+        ES.loadAn($(this.oDialog.node));
+        ES.getData(oParam,"/EntranceGuard/EntranceGuardDoor",this.saveHandler,this);
+    },
+    saveHandler: function (oData) {
+        ES.Common.DialogEdit.prototype.saveHandler.call(this,oData);
+        if(oData.IsSuccess) {
+            this._oParent.oTree.reload();
+        }
+    },
+});
+ES.Common.CloseGate =ES.Common.DialogDel.extend({
+    saveHandler: function (oData) {
+        ES.Common.DialogDel.prototype.saveHandler.call(this,oData);
+        if(oData.IsSuccess) {
+            this._oParent.oTree.reload();
+        }
+    },
+});
+//语音
+ES.Common.ShowVoice = ES.Common.DialogEdit.extend({
+    save: function () {
+        if(!$('#voiceText').val()){
+            ES.aWarn("请语音信息"); return
+        }
+        var oParam = { Text:$('#voiceText').val(),PhoneNum:$('#devNo').val()}
+        ES.loadAn($(this.oDialog.node));
+        ES.getData(oParam,"/EntranceGuard/EntranceGuardVoice",this.saveHandler,this);
+    },
+    saveHandler: function (oData) {
+        ES.Common.DialogEdit.prototype.saveHandler.call(this,oData);
+        if(oData.IsSuccess) {
+            this._oParent.oTree.reload();
+        }
+    },
+});
+
+
+
+

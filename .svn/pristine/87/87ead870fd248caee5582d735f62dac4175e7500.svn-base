@@ -1,0 +1,92 @@
+/**
+ * Created by YangHang on 2018/2/26.
+ */
+
+
+/**
+ * Created by YangHang on 2017/11/17.
+ */
+
+ES.MapView.BaseTabPanel.RectSearch = ES.MapView.BaseTabPanel.BaseLst.extend({
+
+    initOn:function(){},
+    // 高级查询
+    initEvent: function () {
+        var self =this;
+        this.$_oitmeUl.on('click','li>a',function(){
+            $(this).parent().addClass('ec-active').siblings().removeClass('ec-active');
+            self._oPage.fire(self.oOption.cCheckEventName,{acId:parseInt($(this).attr('data-id'))});
+            if(self.$_oStruck.siblings().width()==0){
+                self.$_oStruck.siblings().find('a.ex-icon-turn.on').click();
+            }
+        });
+
+    },
+
+    initUI: function () {
+        // 当前对象集合
+        this.$_oStruck = $(this.cHtml);
+        this.$_oContainer.append(this.$_oStruck);
+        // 车辆容器
+
+        this.$_oTitle = this.$_oStruck.find('h4');
+        this.$_oTitle.html(this.oOption.cTitle);
+        this.$_oitmeUl = this.$_oStruck.find('.ex-mapview-struct-ul')
+        this.initEvent();
+    }
+
+
+});
+
+// html数据
+ES.MapView.BaseTabPanel.RectSearch.include({
+    cHtml: '<div class="ex-layout-carlist">' +
+    '   <div class="ex-layout-carlist-title">' +
+    '       <h4 class="ec-align-left">车辆列表 [共4000辆]</h4>' +
+    '   </div>' +
+    '   <div class="ex-layout-carlist-wrap">' +
+    '      <div class="ex-rect-box">' +
+    '           <ul>' +
+    '               <li>' +
+    '                   <h2>选择拉框类型：</h2>' +
+    '                   <div class="ec-btn-group">' +
+    '                       <button type="button" class="ec-btn ec-btn-default ec-radius"><i class="ec-icon-square-o"></i> 矩形</button>' +
+    '                       <button type="button" class="ec-btn ec-btn-default ec-radius"><i class="ec-icon-star-o"></i> 多边形</button>' +
+    '                       <button type="button" class="ec-btn ec-btn-default ec-radius"><i class="ec-icon-circle-o"></i> 圆形</button>' +
+    '                   </div>' +
+    '               </li>' +
+    '               <li>' +
+    '                   <h2>查询时间：</h2>' +
+    '                   <div class="ec-btn-group ex-rect-time-select">' +
+    '                       <button type="button" class="ec-btn ec-btn-default ec-round">查询历史</button>' +
+    '                       <button type="button" class="ec-btn ec-btn-default ec-round">查询实时</button>' +
+    '                   </div>' +
+    '                   <div class="ex-rect-time-history">' +
+    '                       <div>' +
+    '                           <label for="">开始时间</label>' +
+    '                           <div class="ec-input-group ec-input-group-sm date ec-form-datetime">' +
+    '                               <input size="16" type="text" value="2017-04-05 14:28:37" id="RectBeginTime" class="ec-form-field" ">' +
+    '                               <span class="ec-input-group-label add-on"><i class="icon-th ec-icon-calendar"></i></span>' +
+    '                           </div>' +
+    '                       </div>' +
+    '                       <div>' +
+    '                           <label for="">结束时间</label>' +
+    '                           <div class="ec-input-group ec-input-group-sm date ec-form-datetime">' +
+    '                               <input size="16" type="text" value="2017-04-05 14:28:37" id="RectEndTime" class="ec-form-field" ">' +
+    '                               <span class="ec-input-group-label add-on"><i class="icon-th ec-icon-calendar"></i></span>' +
+    '                           </div>' +
+    '                       </div>' +
+    '                   </div>' +
+    '               </li>' +
+    '               <li>' +
+    '                   <a type="button" class="ec-btn ec-btn-success ec-radius ec-btn-block"><i class="ec-icon-search"></i>&nbsp;&nbsp;查&nbsp;&nbsp;&nbsp;&nbsp;询</a>' +
+    '                   <div class="ec-btn-group ex-rect-reset">' +
+    '                       <button type="button" class="ec-btn ec-btn-danger ec-radius">重置拉框</button>' +
+    '                       <button type="button" class="ec-btn ec-btn-primary ec-radius">刷新查询</button>' +
+    '                   </div>' +
+    '               </li>' +
+    '           </ul>' +
+    '      </div>'+
+    '   </div>' +
+    '</div>',
+});

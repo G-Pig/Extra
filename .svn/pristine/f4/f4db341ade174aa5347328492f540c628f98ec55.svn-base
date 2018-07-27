@@ -1,0 +1,147 @@
+/**
+ * Created by liulin on 2017/8/31.
+ */
+
+ES.Muck.Search = ES.Muck.BaseSearch.extend({
+    initUI: function () {
+        this.oSearchBtn =$('#VehicleInfoSearch');//查询按钮
+        this.oExportBtn =$('#VehicleInfoExport');//导出按钮
+        this.oSurveyBtn =$('#AnnualSurvey');//车辆变更（选择车辆）
+        this.oSurveyImportBtn =$('#AnnualSurveyImport');//车辆变更（导入车辆）
+        this.oBatchAssigned =$('#BatchAssigned');//车辆批量过户
+        this.oBatchApproval =$('#BatchApproval');//批量审批
+
+        this.acAreaId = "";
+    },
+
+    initEvent:function() {
+        var self = this;
+
+        // 注册查询事件
+        this.oSearchBtn.bind('click', function () {
+
+            var cSearchVal = $('#txt_vehicleNo').val();
+            var cTransportPermit = $('#TransportPermit').val();
+            var cTransportBusiness  = $('#TransportBusiness').val();
+            var cQualifications = $('#Qualifications').val()=="0"?0:$('#Qualifications').val();
+            var cCheckDate = self.CheckDateFmt($('#CheckDateBegin').val());
+            var cAzStatusStr = $('#AzStatusStr').val();
+            var oParam = {
+                VehicleNo: cSearchVal,
+                TransportPermit:cTransportPermit,
+                TransportBusiness:cTransportBusiness,
+                CheckDateBegin:cCheckDate[0],
+                CheckDateEnd:cCheckDate[1],
+                Qualifications:cQualifications,
+                AzStatusStr:cAzStatusStr
+            };
+            // 触发查询
+            self._oParent.oGrid.query({oParam: oParam});
+
+        });
+
+        //导出按钮
+        this.oExportBtn.bind('click', function () {
+            var cSearchVal = $('#txt_vehicleNo').val();
+            var cQualifications = $('#Qualifications').val()=="0"?0:$('#Qualifications').val();
+            var cCheckDate = self.CheckDateFmt($('#CheckDateBegin').val());
+            var cAzStatusStr = $('#AzStatusStr').val()=="0"?0:$('#AzStatusStr').val();
+            window.location.href = "/Vehicle/Export?VehicleNo=" +cSearchVal+
+                "&Qualifications=" +cQualifications +
+                "&CheckDateBegin=" + cCheckDate[0] +
+                "&CheckDateEnd=" + cCheckDate[1] +
+                "&ResourceTypeIds=" + self.acAreaId +
+                "&AzStatusStr=" + cAzStatusStr
+        });
+
+        //车辆变更（选择车辆）
+        this.oSurveyBtn.bind('click', function () {
+            var ResourceId = $(this).attr('data-ResourceId');
+            var ResourceName = $(this).attr('data-ResourceName');
+            self._oParent.oSurveyD = new ES.AnnualSurvey.Dialog(self._oParent,{
+                Import:false,
+                ImportValue: 'display:none;',
+                annualValue:'display:block;',
+                ResourceId:ResourceId,
+                url:'/VehicleAsset/SelectVehs',
+                saveUrl:'/VehicleAsset/Check',
+                bRemove:true,
+                change:true,
+            },{title:"车辆资质审核(选择车辆) —— 所选企业：" + ResourceName});
+            self._oParent.oSurveyD.showModal({});
+        });
+
+        //车辆变更（导入车辆）
+        this.oSurveyImportBtn.bind('click', function () {
+            var ResourceId = $(this).attr('data-ResourceId');
+            var ResourceName = $(this).attr('data-ResourceName');
+            self._oParent.oSurveyImportD = new ES.AnnualSurvey.Dialog(self._oParent,{
+                Import:true,
+                ImportValue: 'display:block;',
+                annualValue:'display:none;',
+                ResourceId:ResourceId,
+                url:'/VehicleAsset/CheckUpload',
+                saveUrl:'/VehicleAsset/Check',
+                bRemove:true,
+                change:true,
+            },{title:"车辆资质审核(导入车辆) —— 所选企业：" + ResourceName});
+            self._oParent.oSurveyImportD.showModal({});
+        });
+
+        //车辆批量过户
+        this.oBatchAssigned.bind('click', function () {
+            var ResourceId = $(this).attr('data-ResourceId');
+            var ResourceName = $(this).attr('data-ResourceName');
+            self._oParent.oSurveyImportD = new ES.AnnualSurvey.Dialog(self._oParent,{
+                Import:true,
+                ImportValue: 'display:block;',
+                annualValue:'display:none;',
+                ResourceId:ResourceId,
+                url:'/VehicleAsset/TransferUpload',
+                saveUrl:'/VehicleAsset/Transfer',
+                change:false,
+                bRemove:true
+            },{title:"批量企业挂靠 —— 所选企业：" + ResourceName});
+            self._oParent.oSurveyImportD.showModal({});
+        });
+
+        //批量审批
+        this.oBatchApproval.bind('click', function () {
+            var ResourceId = $(this).attr('data-ResourceId');
+            var ResourceName = $(this).attr('data-ResourceName');
+            self._oParent.oSurveyD = new ES.AnnualSurvey.Dialog(self._oParent,{
+                Import:false,
+                ImportValue: 'display:none;',
+                annualValue:'display:block;',
+                ResourceId:ResourceId,
+                url:'/VehicleAsset/ApproveVehs',
+                saveUrl:'/VehicleAsset/Approve',
+                bRemove:true
+            },{title:"批量审核 —— 所选企业：" + ResourceName});
+            self._oParent.oSurveyD.showModal({});
+        });
+
+    },
+    CheckDateFmt:function(time){
+
+        var TimeValue = time.split('年');
+        var _y = TimeValue[0],_m=parseInt(TimeValue[1]);
+        var BigM = [1,3,5,7,8,10,12],Small=[4,6,9,11];
+        var CheckDateBegin = _y + '-' + ("0"+_m).slice(-2) +"-01";
+        if(BigM.indexOf(_m)){
+            var CheckDateEnd=_y + '-' + ("0"+_m).slice(-2) +"-31";
+        }
+        if(Small.indexOf(_m)){
+            var CheckDateEnd=_y + '-' + ("0"+_m).slice(-2) +"-30";
+        }
+        if(_m==2){
+            if (((_y % 4)==0) && ((_y % 100)!=0) || ((_y % 400)==0)) {
+                var CheckDateEnd=_y + '-' + ("0"+_m).slice(-2) +"-29";
+            } else {
+                var CheckDateEnd=_y + '-' + ("0"+_m).slice(-2) +"-28";
+            }
+        }
+
+        return CheckDate = [CheckDateBegin,CheckDateEnd];
+    },
+});

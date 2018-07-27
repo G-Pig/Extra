@@ -1,0 +1,156 @@
+/**
+ * 添加双grid
+ *
+ * Created by liulin on 2017/9/1.
+ */
+
+ES.Muck.Grid = ES.Common.BaseJqGrid.extend({
+    initialize: function (oParent, oOption,oJqGridOption) {
+        ES.setOptions(this, oOption);
+
+        this._oParent = oParent;
+
+        this.aoCol = [];
+        this.setColumns();
+        this.initOn();
+        this.initUI();
+
+        this.oSearchInput = $('#form-event-type-name');
+        this.oSearchBtn = $('#form-event-type-search');
+
+        var self = this;
+        ES.extend(
+            this.oJqGridOption,
+            oJqGridOption,
+            {
+                subGridRowExpanded: function (parentRowID, parentRowKey) {
+                    var childGridID = parentRowID + "_table";
+                    var childGridPagerID = parentRowID + "_pager";
+                    var oRow = self.gridData.dataList[parseInt(parentRowKey) - 1];
+                    $('#' + parentRowID).append('<table id=' + childGridID + '></table><div id=' + childGridPagerID + ' class=scroll></div>');
+                    $("#" + childGridID).jqGrid({
+                        url: '/Line/QueryLineVehMapListExt',
+                        mtype: "POST",
+                        datatype: "json",
+                        subGrid: false,
+                        serializeGridData: function (data) {
+                            return JSON.stringify(data);
+                        },
+                        postData: { exparameters:  {Id:oRow.Id} },
+                        page: 1,
+                        colModel: [
+                            { label: '车牌号', name: 'VehicleNo', align: 'center', width: 40 },
+                            { label: '绑定时间', name: 'CreateTime', align: 'center', width: 60 },
+                            { label: '车辆ID', name: 'VehicleId', align: 'center', width: 60, hidden:true},
+                            { label: '操作人', name: 'CreateUserId', align: 'center', width: 60, hidden:true},
+                            // {
+                            //     label: "操作",
+                            //     name: "actions",
+                            //     width: 30,
+                            //     align: 'center',
+                            //     formatter: function (val, opt, item) {
+                            //         var content = '';
+                            //         content += '<button class="ec-btn ec-btn-sm ec-btn-success print"><i class="ec-icon-print print"></i> 打印</button>';
+                            //         return content;
+                            //     }
+                            // }
+                        ],
+                        jsonReader: {
+                            root: "dataList",
+                        },
+                        multiselect: false,
+                        width: $("#" + childGridID).width(),
+                        viewrecords: true,
+                        recordtext: '查询出 {2} 条记录， ',
+                        height: 200,
+                        rowNum: 99999,
+                        rowList: [10, 30, 50],
+                        pager: "#" + childGridPagerID,
+
+                        onSelectRow: function (cId,d,e) {
+                            var record = $(this).data('oData').dataList[parseInt(cId) - 1];
+                            self.initClick(e, record);
+                        },
+
+                        loadComplete: function (data) {
+                            //缓存数据到控件
+                            $(this).data('oData',data);
+                        },
+                    });
+                },
+                onSelectRow: function (cId, d, e) {
+                    var record = $(this).data('oData').dataList[parseInt(cId) - 1];
+                    self.initClick(e, record);
+                },
+                colModel: this.aoCol,
+                pager: '#' + this.oOption.cPagerContainer,
+                loadComplete: function (data) {
+                    self.gridData = data;
+                    //缓存数据到控件
+                    $(this).data('oData', data);
+                },
+            });
+        //this.reflesh(this.oOption.nWidth, this.oOption.nHeight);
+        //this.initGrid();
+
+        this.initEvent();
+        //$('.ec-radio-inline>input#qualificationAll').attr("checked", true);
+    },
+
+    // 查询gird 用户信息
+    setColumns: function () {
+
+        this.aoCol =[
+            { label: '线路名称', name: 'Name', align: "center", sortable: false },
+            { label: '区域', name: 'AreaName', align: "center", sortable: false },
+            { label: '工地名称', name: 'SiteName', align: "center", sortable: false },
+            { label: '消纳点名称', name: 'UnloadName', align: "center", sortable: false },
+
+            {
+                label: '操作', name: "Id", align: "center", width: 380, sortable: false,title: false,
+                formatter: function (val, opt, item) {
+                    var content = '';
+                    content += '<button class="ec-btn ec-btn-xs ec-btn-default band"'+ lineCheckAuth.lcBond +'><i class="ec-icon-edit band"></i>绑定车辆</button>';
+                    // content += '  ';
+                    // content += '<button class="ec-btn ec-btn-xs ec-btn-default detail"><i class="ec-icon-eye detail"></i>详  情</button>';
+                    return content;
+
+                }
+            }
+        ];
+    },
+
+    initClick: function (e, oModel) {
+        if (!e) {
+            return;
+        }
+        if ($(e.target).hasClass('band')) {
+            this._oParent.oConfigD = new ES.SelectTruck.Dialog(this._oParent,{bRemove:true,cUrl:'/Site/Configure'},{ title: "线路绑定车辆"});
+            this._oParent.oConfigD.showModal(oModel.Id);
+        }
+        if ($(e.target).hasClass('print')) {
+            this.print(oModel.LineId,oModel.VehicleNo);
+        }
+        // if ($(e.target).hasClass('detail')) {
+        //     this._oParent.oDetailD = new ES.Common.Detail(this._oParent,{bRemove:true,cUrl:'/Site/Detail'},{ title: "线路详情"});
+        //     this._oParent.oDetailD.showModal(oModel);
+        // }
+
+    },
+    print:function(LineId,VehicleNo){
+        ES.getData({Id:LineId,vehicleNo:VehicleNo},"/Line/QueryLinePrintData",function(data){
+            var contentId = $("#printContent");
+            contentId.find(".Code").html(data[0].Code);
+            contentId.find(".AreaName").html(data[0].AreaName);
+            contentId.find(".CreateTime").html(data[0].CreateTime);
+            contentId.find(".ResourceTypeName").html(data[0].ResourceTypeName);
+            contentId.find(".SiteName").html(data[0].SiteName);
+            contentId.find(".UnloadName").html(data[0].UnloadName);
+            contentId.find(".VehicleNo").html(data[0].VehicleNo);
+
+        },this);
+        $("#printContent").printArea();
+    }
+
+});
+

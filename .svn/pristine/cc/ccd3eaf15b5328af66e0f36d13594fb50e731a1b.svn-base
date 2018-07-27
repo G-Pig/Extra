@@ -1,0 +1,86 @@
+/**页面查询按钮和批量下单*/
+ES.Muck.Search = ES.Muck.BaseSearch.extend({
+    initUI: function () {
+        this.oSearchBtn =$('#SearchBtn');//查询按钮
+        this.oNewReportBtn = $('#newReport');//新增报单
+        //this.oArea = $('#InstallArea');
+        this.oEnterprise = $('#InstallEnterprise');
+        this.oOEnterprise = $('#s_h_InstallEnterprise');
+        this.oStartTime = $('#indexTime');
+        this.oAllIn = $('#allIn');
+    },
+    initEvent:function() {
+        var self = this;
+        var oParent = this._oParent;
+        // 注册查询事件
+        this.oSearchBtn.bind('click', function () {
+            var CkType = $('.aClick.ec-active').attr('data-index');
+            //ES.loadAn($('.ex-layout-main'));
+            var oParam = {
+                //Area: self.oArea.val(),
+                EnterpriceId: self.oOEnterprise.val(),
+                StartTime: self.oStartTime.val(),
+                CkType:CkType
+            };
+            self._oParent.oGrid.query({oParam: oParam});
+        });
+        //新增
+        this.oNewReportBtn.on('click',function(){
+            oParent.oEditD = new ES.Common.AddDialog(oParent,{bRemove:true,cUrl:''});
+            oParent.oEditD.showModal();
+        });
+        //批量下单按钮
+        this.oAllIn.bind('click',function(){
+            var itms = $("#checkGridContainer").jqGrid("getGridParam", "selarrrow");//获取所有选择项
+            var ids = [];
+            for (var i = 0 ; i < itms.length; i++) {
+                var rowData = $("#checkGridContainer").jqGrid('getRowData', itms[i]);//获取所有选择项的具体数据
+                ids.push(rowData.Id)
+            }
+            oParent.oEditD = new ES.Common.GetDone(this._oParent,{bRemove:true,cUrl:''});
+            oParent.oEditD.showModal(ids);
+        });
+        //清除按钮
+        $("a.ex-input-clear-btn").click(function () {
+            $(this).parent().siblings("input").val("");
+        });
+        //选择时间
+        this.oStartTime.click(function () {
+            WdatePicker({
+                dateFmt: "yyyy-MM-dd",
+                isShowClear: false,
+                maxDate:"%y-%M-%d"
+            });
+        });
+    },
+});
+
+ES.Muck.AddDialogBtn = ES.Muck.BaseSearch.extend({
+    initUI:function(){
+        this.oUploadBtn = $('#UploadFileBtn');
+        this.oInstallTime = $("#InstallTime");
+        this.oCompTime = $("#CompTime");
+        this.oTextArea = $('#VehicleLis');
+    },
+    initEvent:function(){
+        var self = this;
+        this.oInstallTime.click(function () {
+            WdatePicker({
+                dateFmt: "yyyy-MM-dd",
+                isShowClear: false,
+                maxDate:"%y-%M-%d"
+            });
+        });
+        this.oCompTime.click(function () {
+            WdatePicker({
+                dateFmt: "yyyy-MM-dd",
+                isShowClear: false,
+                maxDate:"%y-%M-%d"
+            });
+        });
+        this.oTextArea.on('input propertychange',function(){
+            var vLis = $(this).val();
+            self._oParent._oParent.fire('OnChange.Vehicle',{oData:vLis});
+        })
+    }
+})

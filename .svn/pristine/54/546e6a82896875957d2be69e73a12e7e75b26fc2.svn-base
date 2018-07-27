@@ -1,0 +1,78 @@
+/**页面查询按钮和批量下单*/
+ES.Muck.Search = ES.Muck.BaseSearch.extend({
+    initUI: function () {
+        this.oSearchBtn =$('#VehicleInfoSearch');//查询按钮
+        this.oNewReportBtn = $('#newReport');//新增报单
+        this.oArea = $('#InstallArea');
+        this.oEnterprise = $('#InstallEnterprise');
+        this.oStartTime = $('#indexTime');
+        this.oAllIn = $('#allIn');
+    },
+    initEvent:function() {
+        var self = this;
+        var oParent = this._oParent;
+        // 注册查询事件
+        this.oSearchBtn.bind('click', function () {
+            //ES.loadAn($('.ex-layout-main'));
+            var nType = $('#nType').val();
+            var oParam = {
+                Area: self.oArea.val(),
+                Enterprise: self.oEnterprise.val(),
+                StartTime: self.oStartTime.val(),
+            };
+            self._oParent.oGrid.query({oParam: oParam});
+            self._oParent.initNum(oParam);
+        });
+        //新增
+        this.oNewReportBtn.on('click',function(){
+            oParent.oEditD = new ES.Common.AddDialog(oParent,{bRemove:true,cUrl:''});
+            oParent.oEditD.showModal();
+        });
+        //批量下单按钮
+        this.oAllIn.bind('click',function(){
+            var ids = $("#checkGridContainer").jqGrid("getGridParam", "selarrrow");//获取所有选择项
+            for (var i = 0 ; i < ids.length; i++) {
+                var rowData = $("#checkGridContainer").jqGrid('getRowData', ids[i]);//获取所有选择项的具体数据
+            }
+        });
+        //清除按钮
+        $("a.ex-input-clear-btn").click(function () {
+            $(this).parent().siblings("input").val("");
+        });
+        //选择时间
+        this.oStartTime.click(function () {
+            WdatePicker({
+                dateFmt: "yyyy-MM-dd",
+                isShowClear: false,
+                maxDate:"%y-%M-%d"
+            });
+        });
+    },
+});
+
+ES.Muck.AddDialogBtn = ES.Muck.BaseSearch.extend({
+    initUI:function(){
+        this.oUploadBtn = $('#UploadFileBtn');
+        this.oInstallTime = $("#InstallTime");
+        this.oCompTime = $("#CompTime");
+    },
+    initEvent:function(){
+        this.oUploadBtn.bind('click',function(){
+            alert('上传图片')
+        });
+        this.oInstallTime.click(function () {
+            WdatePicker({
+                dateFmt: "yyyy-MM-dd",
+                isShowClear: false,
+                maxDate:"%y-%M-%d"
+            });
+        });
+        this.oCompTime.click(function () {
+            WdatePicker({
+                dateFmt: "yyyy-MM-dd",
+                isShowClear: false,
+                maxDate:"%y-%M-%d"
+            });
+        });
+    }
+})

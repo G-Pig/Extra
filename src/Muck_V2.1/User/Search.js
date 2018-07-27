@@ -1,0 +1,32 @@
+/**
+ * Created by liulin on 2017/9/1.
+ */
+ES.Muck.Search = ES.Muck.BaseSearch.extend({
+    initUI: function () {
+        this.oSearchInput =$('#txt_name');//姓名
+        this.oSearchAInput =$('#txt_account');//帐号名
+        this.oRoleName = $('#RoleName');//角色名
+
+        this.oSearchBtn =$('.ex-final-button>button:eq(0)');
+        this.oAddBtn =$('.ex-final-button>button:eq(1)');
+    },
+    initEvent:function() {
+        var self = this;
+        // 注册查询事件
+        this.oSearchBtn.bind('click', function () {
+            var cSearchVal = self.oSearchInput.val();
+            var cSearchAVal = self.oSearchAInput.val();
+            var oRoleName = self.oRoleName.val();
+            var oParam = {Account: cSearchAVal,Name:cSearchVal};
+            // 触发查询
+            self._oParent.oGrid.query({oParam: oParam});
+        });
+        var oParent = this._oParent;
+        //添加用户
+        this.oAddBtn.bind('click', function () {
+
+            oParent.oEditD = new ES.Common.Dialog(oParent,{bRemove:true,cUrl:'/User/Edit'});
+            oParent.oEditD.addShow();
+        });
+    },
+});

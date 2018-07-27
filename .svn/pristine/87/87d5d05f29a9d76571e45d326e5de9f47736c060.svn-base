@@ -1,0 +1,107 @@
+/**
+ *
+ *  车辆历史轨迹
+ *
+ *  历史轨迹 V2.1
+ *  修改功能：历史轨迹修改为一次加载
+ *
+ *  界面没有div元素，全部集成到js代码中
+ *
+ * Created by liulin on 2017/2/22.
+ */
+
+
+// 加载页面是加载数据
+$(function () {
+
+    var nMapHeight = $(window).height();
+    var nMapWidth = $(window).width();
+
+    //页面容器
+    var oPage = new ES.TrackView.Page("MapView", {});
+
+    // 容器内容布局
+    new ES.TrackView.Layout(oPage, { nWidth: nMapWidth, nHeight: nMapHeight });
+
+    // 地图布局
+    //new L.MapLib.MapControl.Layout(oPage, { cDidId: 'TrackMapView' });
+
+    var oMapMaster = new L.MapLib.MapMaster.Map(oPage, {
+        cDidId: 'MapView',
+        oMapOption: {
+            zoomControl: false,
+            layers: [],
+            center: new L.LatLng(30.576746, 114.306221),//经度:114.306221,纬度:30.576746
+            zoom: 13
+        },
+        nMapWidth: nMapWidth,
+        nMapHeight: nMapHeight
+    });
+
+    // 加载地图
+    oMapMaster.loadMapMaster();
+
+    //new L.MapLib.MapControl.ESMapToolArea(oMapMaster, { cUrl: '/MapView/GetRealRegion' ,nDeptId :1 });
+    new L.MapLib.MapControl.ESMapToolBox(oMapMaster, {});
+    new L.MapLib.MapControl.ESMapTile(oMapMaster, {});
+
+    var oBar = new ES.TrackView.Bar(oPage, {});
+    new ES.TrackView.TrackChart(oPage, {});
+    var oCtrl = new ES.TrackView.Control(oPage, {});
+
+    new ES.TrackView.TrackData(oPage, {});
+    new ES.TrackView.RealTrack.TrackPos(oPage, {});
+
+    new ES.TrackView.RealTrack.TrackLine(oPage, {});
+    new ES.TrackView.RealTrack.TrackArrow(oPage, {})
+    new ES.TrackView.RealTrack.TrackMarker(oPage, {});
+
+    // 画开始点
+    new ES.TrackView.PointLayer.BeginMarker(oPage, { cPosName: "轨迹开始点", });
+    // 画结束点
+    new ES.TrackView.PointLayer.EndMarker(oPage, { cPosName: "轨迹结束点", });
+    new ES.TrackView.PointLayer.SubMarkerMgr(oPage, { cPosName: "轨迹点", });
+    new ES.TrackView.PointLayer.ParkMarkerMgr(oPage, { cPosName: "停留点", });
+    new ES.TrackView.PointLayer.AlarmMarkerMgr(oPage, { cPosName: "告警点" });
+    new ES.TrackView.PanelBox.ParkPanel(oPage, {});
+    var oAlarmPanel = new ES.TrackView.PanelBox.AlarmPanel(oPage, {});
+    oAlarmPanel.alarmFilter();
+
+    new ES.TrackView.PanelBox.SpeedDoorWeightPanel(oPage, {});
+
+    new ES.VehTrackInfo.RealStatus(oPage, {});
+    new ES.VehTrackInfo.WeightChart(oPage, {});
+    new ES.VehTrackInfo.SpeedChart(oPage, {});
+
+    new ES.TrackView.AlarmTrack(oPage, {});
+    new ES.TrackView.HistoryTrack(oPage, {})
+    //oPage.trackSearch();
+    // 直接查询历史轨迹数据
+    oCtrl.searchTrack();
+    // 画所有工地数据到地图
+    new ES.TrackView.SiteLayer(oPage, {});
+    // 画所有消纳点数据到地图
+    new ES.TrackView.UnloadLayer(oPage, {});
+
+    new ES.TrackView.WorkSiteLayer(oPage,{});
+
+    new ES.TrackView.WorkUnloadLayer(oPage,{});
+
+    var oSusLayer = new ES.TrackView.SusSiteLayer(oPage,{});
+    oSusLayer.drawLayers();
+
+    var oSusUnload = new ES.TrackView.SusUnloadLayer(oPage,{});
+    oSusUnload.drawLayers();
+
+    $(window).resize(function () {
+        $("#MapView , .ex-layout-content").css({
+            height: $(window).height(),
+            width: $(window).width()
+        })
+
+        $(".ex-layout-track-chart").stop().animate({
+            "max-height": $(window).height() - 275 + "px",
+        }, 500)
+    });
+})
+

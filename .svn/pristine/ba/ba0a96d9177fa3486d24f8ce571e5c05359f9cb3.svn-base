@@ -1,0 +1,75 @@
+/**
+ * Created by liulin on 2017/9/1.
+ */
+
+ES.Muck.Grid = ES.Common.BaseJqGrid.extend({
+
+    // 查询gird 用户信息
+    setColumns: function () {
+
+        this.aoCol =[
+            { label: '企业名称', name: 'EnterpriseName', width: 180, align: 'center' },
+            { label: '简称', name: 'Abbreviation', width: 150,align: 'center' },
+            //{ label: '注册资金', name: 'Registered', width: 100, align: 'center' },
+            { label: '所属地区', name: 'ParentName', width: 100, align: 'center' },
+            { label: '企业车辆数', name: 'VehCount', width: 100, align: 'center' ,
+                formatter: function (cellValue, options, rowObject) {
+                    var value = cellValue+"辆"
+                    return value;
+                }
+            },
+            // { label: '安装设备数', name: '', width: 100, align: 'center',
+            //     formatter: function (cellValue, options, rowObject) {
+            //         var value = "0个"
+            //         return value;
+            //     }
+            // },
+            { label: '处置证数量', name: 'PermitCount', width: 100, align: 'center' ,
+                formatter: function (cellValue, options, rowObject) {
+                    var value = cellValue+"张"
+                    return value;
+                }
+            },
+            { label: '法人代表', name: 'LegalName', width: 100, align: 'center' },
+            { label: '联系人电话', name: 'ContactPhone', width: 130, align: 'center' },
+            {
+                label: '操作',
+                name: '',
+                width: 150,
+                align: 'center',
+                formatter: function (cellValue, options, rowObject) {
+                    var content = '  ';
+                        content += '<button class="ec-btn ec-btn-xs ec-btn-default detail"><i class="ec-icon-eye detail"></i>  详情</button>';
+                        content += '  ';
+                        content += '<button  class="ec-btn ec-btn-xs ec-btn-primary ec-radius edit"><i class="ec-icon-edit edit"></i>  编辑</button>';
+                        content += '  ';
+                        content += '<button class="ec-btn ec-btn-xs ec-btn-danger ec-radius del"><i class="ec-icon-trash-o del"></i>  删除</button>';
+
+                    return content;
+                }
+            }
+        ];
+    },
+
+    initClick: function (e, oModel) {
+        if (!e) {
+            return;
+        }
+        if ($(e.target).hasClass('edit')) {
+            this._oParent.oEditD = new ES.Common.Dialog(this._oParent,{bRemove:true,cUrl:'/Enterprise/Edit'},{width:800});
+            this._oParent.oEditD.editShow(oModel);
+        }
+        if ($(e.target).hasClass('del')) {
+            this._oParent.oDelD = new ES.Common.DelEntity(this._oParent,{bRemove:true,cUrl:'/Enterprise/Delete'},{
+                title: '删除操作-企业',
+                content: '是否要删除数据！'});
+            oModel.id = oModel.Id;
+            this._oParent.oDelD.del(oModel);
+        }
+        if ($(e.target).hasClass('detail')) {
+            this._oParent.oDetailD = new ES.Common.Detail(this._oParent, { bRemove: true, cUrl: '/Enterprise/Detail' }, { title: "企业详情" });
+            this._oParent.oDetailD.showModal(oModel);
+        }
+    }
+});
+

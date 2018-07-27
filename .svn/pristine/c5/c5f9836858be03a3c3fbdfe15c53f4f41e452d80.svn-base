@@ -1,0 +1,21 @@
+/**
+ * 左侧树
+ * Created by liulin on 2017/9/1.
+ */
+ES.Muck.Tree = ES.Muck.LeftTree.extend({
+    selectCallBack: function (e, oNode) {
+        var deptId = oNode.node.id;
+        var nType = $("#nType").val();
+        $.post("/Reports/GetAreaVehAlerm?nType="+nType+"&deptId="+deptId, function (data) {
+            $('#online_veh').text(data.online_veh);
+            $('#online_veh_').text(data.online_veh_);
+            $('#FrontDoor').text(data.isFrontDoor_total);
+            $('#OverSpeed').text(data.isOverSpeed_total);
+            $('#OverWeight').text(data.isOverWeight_total);
+            $('#Overline').text(data.isOverline_total);
+        });
+    },
+    reload: function () {
+        this.$_oTree.refresh();
+    },
+});

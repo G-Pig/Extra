@@ -1,0 +1,116 @@
+/**
+ * 弹出层的解决方案
+ * 新增 修改
+ * Created by liulin on 2017/9/1.
+ */
+
+
+
+
+ES.Common.Dialog =ES.Common.DialogEdit.extend({
+    addShow: function (index) {
+        this.oIndex = index;
+        this.oDialog.title('新增');
+        this.oDialog.showModal();
+    },
+
+    afterOpen:function(id) {
+        var oParam = {
+            url: this.oOption.cUrl,
+            data: {Id:  this.oBusData,TypeId:this.oIndex},
+            dataType: 'html',
+            type:'Get'
+        };
+        ES.reqData(oParam, function (oResp) {
+            this.setContent(oResp.rtnData);
+        }, this);
+    },
+
+    save: function () {
+        ES.loadAn($(this.oDialog.node));
+        var oParam = $("#frm_ruleedit").serialize();
+        if(this.oOption.cUrl=='/RuleManage/EditRSpeedLimit'){
+            var ids ='';
+            var items = $('.ex-layout-selected-roadlist').find('label');
+            for(var i=0;i<items.length;i++){
+                var id = items.eq(i).attr('cid')
+                ids += i==(items.length-1)?id:id+',';
+            }
+            oParam +='&RfIdList='+ids
+        }
+        ES.getData(oParam,"/RuleManage/Edit",this.saveHandler,this);
+
+    },
+
+    saveHandler: function (oData) {
+        ES.Common.DialogEdit.prototype.saveHandler.call(this,oData);
+        if(oData.IsSuccess) {
+            var gType = parseInt($('.ex-rule-tab>li.active').attr('data-index'));
+            var oParam = {Type: gType};
+
+            this._oParent.oGrid.query({oParam: oParam});
+        }
+    }
+});
+
+
+
+ES.Common.DelEntity =ES.Common.DialogDel.extend({
+
+    saveHandler: function (oData) {
+        ES.Common.DialogDel.prototype.saveHandler.call(this,oData);
+        if(oData.IsSuccess) {
+            var gType = parseInt($('.ex-rule-tab>li.active').attr('data-index'));
+            var oParam = {Type: gType};
+
+            this._oParent.oGrid.query({oParam: oParam});
+        }
+    }
+});
+
+
+ES.Common.AddType =ES.Common.DialogDel.extend({
+
+    initialize: function (oParent, oOption,oDOption) {
+        ES.Common.BaseDialog.prototype.initialize.call(this, oParent, oOption,oDOption);
+        // 窗体保存的业务数据
+        this.oBusData = null;
+    },
+    initButton:function(){},
+    // 注册事件
+    initOn: function () {},
+    afterOpen:function(){
+        var self = this;
+        $('.ex-rule-tabs.modelType').on('click','li',function(){
+            var _index = parseInt($(this).attr('data-index'));
+
+            if (self.oOption.bRemove) {
+                self.oDialog.remove();
+            }
+            else {
+                self.oDialog.close();
+            }
+            switch (_index){
+                case 1:
+                    self._oParent.addModel = new ES.Common.Dialog(self._oParent,{bRemove:true,cUrl:'/RuleManage/Edit'});
+                    break;
+                case 2:
+                    self._oParent.addModel = new ES.Common.Dialog(self._oParent,{bRemove:true,cUrl:'/RuleManage/Edit'});
+                    break;
+                case 3:
+                    self._oParent.addModel = new ES.Common.Dialog(self._oParent,{bRemove:true,cUrl:'/RuleManage/Edit'});
+                    break;
+                case 4:
+                    self._oParent.addModel = new ES.Common.Dialog(self._oParent,{bRemove:true,cUrl:'/RuleManage/Edit'});
+                    break;
+                case 5:
+                    self._oParent.addModel = new ES.Common.Dialog(self._oParent,{bRemove:true,cUrl:'/RuleManage/EditRSpeedLimit'});
+                    break;
+            }
+            self._oParent.addModel.addShow(_index);
+
+        })
+    }
+});
+
+

@@ -1,0 +1,50 @@
+/**
+ * 负责加载grid数据
+ *
+ * Created by liulin on 2017/8/31.
+ */
+
+ES.Muck.Grid = ES.Common.BaseJqGrid.extend({
+
+    setColumns:function(){
+        var list =  [
+            {label: '一级标签', name: 'Name_1', align: 'center', width: 100},
+            { label: '二级标签', name: 'Name_2', align: 'center', width: 80 },
+            // { label: '责任归属', name: 'SignData', align: 'center', width: 120 },
+            {
+                label: "操作",
+                name: "actions",
+                align: 'center',
+                width: 150,
+                formatter: function formatHtml(cellValue, options, rowObject) {
+                    var content = '';
+                    content+= '<button class="ec-btn ec-radius ec-btn-xs ec-btn-primary edit"'+TagAuth.Tagedit +'><i class="ec-icon-edit edit"></i> 编辑</button>';
+                    content+= '  ';
+                    content+= '<button class="ec-btn ec-btn-xs ec-btn-default ec-radius del"'+TagAuth.Tagdel +'><i class="ec-icon-trash-o del"></i> 删除</button>';
+                    return content;
+                }
+            }
+        ];
+
+        this.aoCol = list;
+    },
+
+    initClick: function (e, oModel) {
+        if (!e) {
+            return;
+        }
+        if ($(e.target).hasClass('edit')) {
+            this._oParent.oEditD = new ES.Common.Dialog(this._oParent,{bRemove:true,cUrl:'/Tag/Edit'});
+            this._oParent.oEditD.editShow(oModel.Id);
+        }
+        if ($(e.target).hasClass('del')) {
+            this._oParent.oDelD = new ES.Common.DelEntity(this._oParent, { bRemove: true, cUrl: '/Tag/Delete' }, {
+                title: '删除操作-标签',
+                content: '是否要删除数据！'});
+            this._oParent.oDelD.del(oModel);
+        }
+    }
+});
+
+
+

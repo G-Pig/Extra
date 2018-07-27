@@ -1,0 +1,79 @@
+/**
+ * 左侧树
+ * Created by liulin on 2017/9/1.
+ */
+ES.Muck.SiteTree = ES.Muck.LeftTree.extend({
+    initUI: function () {
+
+        this.$_oContainer = $('.ex-theme-tree');
+        this.$_oTreeContainer = this.$_oContainer.find('.ex-layout-struckbox-content-site');
+        this.$_oSearchInput = this.$_oContainer.find('.ex-tree-search-ipt-site');
+        this.$_oSearchBtn = this.$_oContainer.find('.ex-tree-search-btn-site');
+        //this.$_oContainer.find('h3').html(this.oOption.cTitle);
+    },
+    // 选择节点触发
+    selectCallBack:function (e,node ) {
+        var oItem = node.node;
+        if(oItem.data.type == 1){
+            this.areaEvent(oItem);
+
+        }else if(oItem.data.type == 6){
+            this.siteEvent(oItem);
+        }
+
+
+
+    },
+    areaEvent:function(oItem){
+        var self = this;
+        this._oParent.fire("MV:Site.drawRegion", { cText: oItem.text,  cId: oItem.id });
+        var _typeIds = this._oParent.LayersPanel.oOption.checkStatus.concat([6]);
+        ES.getData({typeIds:_typeIds,districtId:oItem.id},'/CloudMap/GetList',function(oData){
+            //保存节点
+            self._oParent.fire("MV:Site.setStatusData", {aoStatusData:oData});
+        });
+        ES.getData({districtId:oItem.id},'/Site/GetSuspicList',function(oData){
+            //保存节点
+            self._oParent.fire("MV:Site.setStatusSuspSiteData", {aoStatusData:oData});
+        });
+        ES.getData({districtId:oItem.id},'/Site/Stat',function(oData){
+            //卡片数据
+            self._oParent.fire("MV:Site.setSiteCards", {aoSiteCards:oData});
+
+        })
+    },
+    siteEvent:function(oItem){
+        var self = this;
+        this._oParent.fire("MV:Site.clearRegion");
+        this._oParent.fire("MV:Site.clearAll");
+        var oSiteData = [oItem.data];
+        var _typeIds = this._oParent.LayersPanel.oOption.checkStatus.concat([6]);
+        ES.getData({typeIds:_typeIds,districtId:"3"},'/CloudMap/GetList',function(oData){
+            //保存节点
+            oData[6] = oSiteData;
+            self._oParent.fire("MV:Site.setStatusData", {aoStatusData:oData});
+        })
+        ES.getData({districtId:"3"},'/Site/GetSuspicList',function(oData){
+            //保存节点
+            self._oParent.fire("MV:Site.setStatusSuspSiteData", {aoStatusData:oData});
+        })
+
+    }
+
+});
+
+ES.Muck.VideoTree = ES.Muck.LeftTree.extend({
+    initUI: function () {
+
+        this.$_oContainer = $('.ex-theme-tree');
+        this.$_oTreeContainer = this.$_oContainer.find('.ex-layout-struckbox-content-video');
+        this.$_oSearchInput = this.$_oContainer.find('.ex-tree-search-ipt-video');
+        this.$_oSearchBtn = this.$_oContainer.find('.ex-tree-search-btn-video');
+        //this.$_oContainer.find('h3').html(this.oOption.cTitle);
+    },
+    // 选择节点触发
+    selectCallBack:function (e,node ) {
+
+        this._oParent.oGrid.query({oParam:{ResourceTypeId:node.node.id}});
+    }
+});

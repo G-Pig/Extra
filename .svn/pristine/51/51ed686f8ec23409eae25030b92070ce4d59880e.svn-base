@@ -1,0 +1,108 @@
+/**
+ * 弹出层的解决方案
+ * 新增 修改
+ * Created by YANGHANG on 2017/9/1.
+ */
+ES.Common.EditAnnual =ES.Common.DialogEdit.extend({
+
+    afterOpen:function(id) {
+        var cHtml = '<ul class="ec-avg-sm-1 AnnualModel">' +
+                    '   <li class="ec-form-group">'+
+                    '      <label class="ec-u-sm-2 ec-form-label ec-padding-right-0 ec-text-right">变更确认：</label>'+
+                    '      <div class="ec-u-sm-10">'+
+                    '           <label for="AnnualOK" class="ec-radio-inline ec-success ec-margin-right-lg">'+
+                    '           <input type="radio" id="AnnualOK" name="form-radio" class="ec-ucheck-radio ec-margin-right-lg">同意</label>'+
+                    '           <label for="AnnualNO" class="ec-radio-inline ec-success">'+
+                    '           <input type="radio" id="AnnualNO" name="form-radio" class="ec-ucheck-radio">不同意</label>'+
+                    '      </div> ' +
+                    '   </li>' +
+                    '   <li class="ec-form-group">' +
+                    '       <label class="ec-u-sm-2 ec-form-label ec-padding-right-0 ec-text-right">变更意见：</label>' +
+                    '       <div class="ec-u-sm-10">' +
+                    '           <textarea class="ec-radius ec-form-field" id="approvalOpinion" rows="3" style="resize:none"></textarea>' +
+                    '       </div>' +
+                    '   </li>' +
+                    '</ul>';
+        this.setContent(cHtml);
+        $('.AnnualModel input[type="checkbox"], input[type="radio"]').uCheck();
+    },
+
+    save: function () {
+
+
+
+        ES.loadAn($(this.oDialog.node));
+        var remark = $('#approvalOpinion').val();
+        var AnnualSta = document.getElementById('AnnualOK').checked
+        if(AnnualSta){
+            ES.getData({companyId:this.oOption.ResourceId,vehids:this.oBusData,remark:remark},this.oOption.cUrl,this.saveHandler,this);
+        }else{
+            return ;
+        }
+    },
+    saveHandler: function (oData) {
+        ES.Common.DialogEdit.prototype.saveHandler.call(this,oData);
+        if(oData.IsSuccess) {
+            this._oParent.oGrid.query({});
+        }
+    },
+    editShow: function (oData) {
+        this.oBusData = oData;
+        this.oDialog.title(this.oOption.title);
+
+        this.oDialog.showModal();
+    },
+});
+
+
+
+//查看绑定车辆弹框
+ES.Common.VehicleDig =ES.Common.DialogDel.extend({
+    afterOpen:function(id) {
+        this.oModelGrid = new ES.Muck.ModelGrid(this, {
+            // 容器
+            cContainer: '.ex-Permit-VehicleModel',
+            // grid id
+            cGridContainer: 'VehicleModelGridContainer',
+            // 分页菜单id
+            cPagerContainer: 'VehicleModelGridToolBarContainer',
+        }, {
+            url:'/RemovalPermit/VehiclePaging',
+            postData: { exparameters: {PermitId:this.oBusData}
+            },
+        });
+
+        var nW = $('.ex-Permit-VehicleModel').parent().width();
+        var nH = $('.ex-Permit-VehicleModel').parent().height()-75;
+
+        this.oModelGrid.initGrid({ width: nW, height: nH});
+    },
+    del: function (oData) {
+        this.oBusData = oData;
+        this.hideFooter();
+        this.oDialog.showModal();
+    }
+});
+
+ES.Common.DelEntity =ES.Common.DialogDel.extend({
+    save: function () {
+        if (!this.oBusData) {
+            ES.aWarn(ES.Lang.BaseDialog[30]);
+            return;
+        }
+
+        ES.loadAn($(this.oDialog.node));
+
+        ES.getData({id:this.oBusData},this.oOption.cUrl, this.saveHandler, this);
+    },
+
+    saveHandler: function (oData) {
+        ES.Common.DialogDel.prototype.saveHandler.call(this,oData);
+        if(oData.IsSuccess) {
+            this._oParent.oGrid.query({});
+        }
+    }
+});
+
+
+

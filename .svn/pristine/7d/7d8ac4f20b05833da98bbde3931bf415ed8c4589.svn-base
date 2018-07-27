@@ -1,0 +1,105 @@
+/**
+ * 负责加载grid数据
+ *
+ * Created by liulin on 2017/8/31.
+ */
+
+ES.Muck.RoleGrid = ES.Common.BaseJqGrid.extend({
+
+    setColumns:function(){
+       var list =  [
+            //{ label: '角色ID', name: 'RoleId', align: 'center', width: 40 },
+            { label: '角色名称', name: 'RealName', align: 'center', width: 60 },
+            { label: '详细描述', name: 'Description', align: 'center' },
+            { label: '创建人', name: 'CreateUserName', align: 'center', width: 60,
+                formatter: function (val, opt, item) {
+                    if (val == null) {
+                        return "本用户";
+                    }
+                }},
+            { label: '创建时间', name: 'CreateTime', align: 'center', width: 80 },
+            {
+                label: "操作",
+                name: "actions",
+                align: 'center',
+                width: 150,
+                formatter: function formatHtml(cellValue, options, rowObject) {
+
+                    var content = '';
+                    content += '<button class="ec-btn ec-radius ec-btn-xs ec-btn-success editAction"' + RoleAuth.roleperm + '><i class="ec-icon-key editAction"></i> 功能权限</button>';
+                    content += '  ';
+                    content += '<button class="ec-btn ec-radius ec-btn-xs ec-btn-primary edit"' + RoleAuth.roleedit + '><i class="ec-icon-edit edit"></i> 编辑</button>';
+                    content += '  ';
+                    content += '<button class="ec-btn ec-btn-xs ec-btn-default ec-radius del"' + RoleAuth.roledel + '><i class="ec-icon-trash-o del"></i> 删除</button>';
+
+                    return content;
+                }
+            }
+        ];
+
+        this.aoCol = list;
+    },
+
+    initClick: function (e, oModel) {
+        if (!e) {
+            return;
+        }
+        if ($(e.target).hasClass('editAction')) {
+            this._oParent.oEditActionD = new ES.Common.EditTreeDia(this, { bRemove: true, cUrl: '/Role/SetPermission' }, {
+                title: "功能权限配置",
+                width: 560
+            }, {
+                core: {
+                    'animation': 0,
+                    'check_callback': true,
+
+                    'state': { 'opened': true },
+                    'data': {
+                        url: '/Role/GetPermissionTree?roleId=' + oModel.Id,
+                        type: 'GET'
+                    }
+                },
+                "checkbox": {
+                    "keep_selected_style": true,//是否默认选中
+                    "three_state": false, //父子级别级联选择
+                    'cascade': 'down+undetermined'
+                },
+                plugins: ['checkbox', 'types', 'search', 'unique']
+            });
+            this._oParent.oEditActionD.show(oModel);
+        }
+         //if ($(e.target).hasClass('editResource')) {
+         //   this._oParent.oEditResourceD = new ES.Common.EditTreeDia(this,{bRemove:true,cUrl:'/Role/SetResourceType'},{
+         //       title:"资源权限配置",
+         //       width:560
+         //   },{
+         //       core: {
+         //           'animation': 0,
+         //           'check_callback': true,
+
+         //           'state': {'opened': true},
+         //           'data': {
+         //               url: '/Role/GetResourceTypeTree?roleId='+oModel.RoleId,
+         //               type: 'GET'
+         //           }
+         //       },
+         //       plugins: [ 'checkbox','types', 'search',  'unique']
+         //   });
+         //   this._oParent.oEditResourceD.show(oModel);
+         //}
+        if ($(e.target).hasClass('edit')) {
+            this._oParent.oEditD = new ES.Common.Dialog(this._oParent,{bRemove:true,cUrl:'/Role/Edit'});
+            this._oParent.oEditD.editShow(oModel.Id);
+        }
+        if ($(e.target).hasClass('del')) {
+            this._oParent.oDelD = new ES.Common.DelEntity(this._oParent,{bRemove:true,cUrl:'/Role/Delete'},{
+                title: '删除操作-用户',
+                content: '是否要删除数据！'});
+            oModel = { roleId: oModel.Id };
+            this._oParent.oDelD.del(oModel);
+        }
+    }
+});
+
+
+

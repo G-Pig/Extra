@@ -1,0 +1,53 @@
+/**
+ * Created by YangHang on 2017/12/12.
+ */
+ES.CloudMap.BasePanel = ES.Evented.extend({
+    oOption: {
+        // 外层容器
+        cDivContainer: '.ex-mapview-panel-layerCheck',
+    },
+
+    initialize: function (oParent, oOption) {
+        this._oParent = oParent;
+
+        ES.setOptions(this,oOption);
+
+        if (typeof this.oOption.cDivContainer === 'object') {
+            this.$_oPContainer = this.oOption.cDivContainer;
+        }
+        else {
+            this.$_oPContainer = $(this.oOption.cDivContainer);
+        }
+        this.initUI();
+        this.initOn();
+        this.setParentEvent();
+    },
+    initUI: function () {
+        var self = this;
+        $.each(this.oOption.item,function(i,v){
+            var oTemp = $(ES.template(self.cHtml, {cTitle: v.Title,cPanelId:v.PanelId,check:v.check,cValue:v.cValue}));
+            self.$_oPContainer.append(oTemp);
+        });
+    },
+    initOn:function(){
+    },
+    setParentEvent: function () {
+
+        //屏蔽事件
+        L.DomEvent.addListener( this.$_oPContainer.get(0), 'click', L.DomEvent.stopPropagation);
+        L.DomEvent.addListener( this.$_oPContainer.get(0), 'dblclick', L.DomEvent.stopPropagation);
+        L.DomEvent.addListener( this.$_oPContainer.get(0), 'mousemove', L.DomEvent.stopPropagation);
+        L.DomEvent.addListener( this.$_oPContainer.get(0), 'mousewheel', L.DomEvent.stopPropagation);
+        L.DomEvent.addListener( this.$_oPContainer.get(0), 'touchmove', L.DomEvent.stopPropagation);
+    },
+
+});
+
+ES.CloudMap.BasePanel.include({
+    cHtml:
+    '<li>'+
+    '<label for="{cPanelId}" class="ec-checkbox-inline ec-success">'+
+    '    <input type="checkbox" id="{cPanelId}" name="form-checkbox" class="ec-ucheck-checkbox" {check} value="{cValue}">{cTitle}'+
+    '</label>'+
+    '</li>'
+});

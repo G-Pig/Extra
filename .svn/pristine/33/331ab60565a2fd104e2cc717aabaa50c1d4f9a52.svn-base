@@ -1,0 +1,147 @@
+/**
+ * 负责加载grid数据
+ *
+ * Created by liulin on 2017/8/31.
+ */
+
+ES.Muck.Grid = ES.Common.BaseJqGrid.extend({
+    initialize: function (oParent, oOption,oJqGridOption) {
+        ES.setOptions(this, oOption);
+
+        this._oParent = oParent;
+
+        this.aoCol = [];
+        this.setColumns();
+        this.initOn();
+        this.initUI();
+
+        this._countUrl = oJqGridOption.countUrl;
+        this.initCount("");
+
+        this.oSearchInput = $('#form-event-type-name');
+        this.oSearchBtn = $('#form-event-type-search');
+
+        var self = this;
+        ES.extend(
+            this.oJqGridOption,
+            oJqGridOption,
+            {
+                onSelectRow: function (cId, d, e) {
+                    var record = $(this).data('oData').dataList[parseInt(cId) - 1];
+                    self.initClick(e, record);
+                },
+                colModel: this.aoCol,
+                pager: '#' + this.oOption.cPagerContainer,
+                loadComplete: function (data) {
+                    self.gridData = data;
+                    //缓存数据到控件
+                    $(this).data('oData', data);
+                },
+                gridComplete: function () {
+                    $('.ec-btn-dropdown button').on('click', function (e) {
+                        $(this).parents('tr.ui-widget-content').siblings('tr.ui-widget-content').find('.ec-dropdown-content').hide(200)
+                        $(this).siblings().toggle('fast');
+                        var self = $(this);
+                        $("body").one("click", function () {//对document绑定一个影藏Div方法
+                            self.siblings().hide(200);
+                        });
+                        e.stopPropagation();
+                    })
+
+                }
+            });
+        //this.reflesh(this.oOption.nWidth, this.oOption.nHeight);
+        //this.initGrid();
+
+        this.initEvent();
+        //$('.ec-radio-inline>input#qualificationAll').attr("checked", true);
+    },
+    setColumns:function(){
+       var list =  [
+            { label: '车牌号', name: 'VehicleNo', editable: true ,width:60, align: 'center'},
+            { label: '企业名称', name: 'EnterpriseName', editable: true,width:120, align: 'center' },
+            { label: '所属区域', name: 'DistName', editable: true,width:60, align: 'center' },
+            { label: '是否密闭', name: 'isFrontDoor', editable: true,width:100, align: 'center',
+                formatter: function (val, opt, obj) {
+                    if(val){
+                        return "是"
+                    }else{
+                        return "否"
+                    }
+                }
+            },
+            { label: '是否超速', name: 'isOverSpeed', editable: true, align: 'center' ,width:80,
+                formatter: function (val, opt, obj) {
+                    if(val){
+                        return "是"
+                    }else{
+                        return "否"
+                    }
+                }
+            },
+            { label: '是否超载', name: 'isOverWeight', editable: true ,width:75, align: 'center',
+                formatter: function (val, opt, obj) {
+                    if(val){
+                        return "是"
+                    }else{
+                        return "否"
+                    }
+                }
+            },
+            { label: '是否线路偏移', name: 'isOverline', editable: true , align: 'center',
+               formatter: function (val, opt, obj) {
+                   if(val){
+                       return "是"
+                   }else{
+                       return "否"
+                   }
+               }
+           },
+            {
+                label: '操作',
+                name: 'actions',
+                width: 100,
+                align: 'center',
+                formatter: function (cellValue, options, rowObject) {
+                    var content = '';
+                    content += '<button  class="ec-btn ec-btn-xs ec-btn-default ec-radius view"' + VehnicleInfoAuth.vehnicleDetail + '><i class="ec-icon-eye view"></i>  查看线路</button>';
+                    return content;
+                }
+            }
+        ];
+
+        this.aoCol = list;
+    },
+    initClick: function (e, oModel) {
+        if (!e) {
+            return;
+        }
+        if ($(e.target).hasClass('view')) {
+            this._oParent.oDetailD = new ES.Common.Detail(this._oParent, { bRemove: true, cUrl: '/VehicleState/Detail'},
+                { title: '车辆详情 — 车牌号：'+oModel.VehicleNo }
+                );
+            this._oParent.oDetailD.showModal(oModel);
+        }
+    },
+    initCount:function(ResourceTypeId){
+        ES.getData({deptId:deptId,nType:nType},this._countUrl,function(data){
+            /*$('#online_veh').text(data.online_veh);
+            $('#online_veh').text(data.online_veh_);
+            $('#online_veh').text(data.isFrontDoor_total);
+            $('#online_veh').text(data.isOverSpeed_total);
+            $('#online_veh').text(data.isOverWeight_total);
+            $('#online_veh').text(data.isOverline_total);*/
+
+            $(".ex-topCharts-item>b").each(function () {
+                var n = $(this).attr("id");
+                $(this).text(data[n]);
+            });
+            $("li.ex-topCharts-item").click(function () {
+                $("li.ex-topCharts-item").removeClass("ec-active");
+                $(this).addClass("ec-active");
+            });
+        })
+    },
+});
+
+

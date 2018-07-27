@@ -1,0 +1,399 @@
+/**
+ * 弹出层的解决方案
+ * 新增 修改
+ * Created by liulin on 2017/9/1.
+ */
+
+
+
+// 新建工地接口，新建工地完成
+ES.Common.Dialog = ES.Common.DialogEdit.extend({
+
+    afterOpen:function() {
+        var id = null;
+        if (this.oBusData) {
+            id = this.oBusData.Id;
+        }
+        var oParam = {
+            url: '/Site/Edit',
+            data: {Id: id},
+            dataType: 'html',
+            type: 'Get'
+        };
+        ES.reqData(oParam, function (oResp) {
+            this.setContent(oResp.rtnData);
+        }, this);
+    },
+
+    save: function () {
+        ES.loadAn($(this.oDialog.node));
+        ES.getData($("#_SiteFrm").serialize(),"/Site/Edit",this.saveHandler,this);
+    },
+
+    saveHandler: function (oData) {
+        ES.Common.DialogEdit.prototype.saveHandler.call(this,oData);
+        if(oData.IsSuccess) {
+            this._oParent.oGrid.query({});
+            this._oParent.oTree.reload();
+        }
+    },
+});
+
+// 删除工地界面js，删除完成
+ES.Common.DelEntity =ES.Common.DialogDel.extend({
+
+    save: function () {
+        if (!this.oBusData) {
+            ES.aWarn(ES.Lang.BaseDialog[30]);
+            return;
+        }
+
+        ES.loadAn($(this.oDialog.node));
+
+        ES.getData({Id:this.oBusData}, this.oOption.cUrl, this.saveHandler, this);
+    },
+
+    saveHandler: function (oData) {
+        ES.Common.DialogDel.prototype.saveHandler.call(this,oData);
+        if(oData.IsSuccess) {
+            this._oParent.oGrid.query({});
+            this._oParent.oTree.reload();
+        }
+    },
+});
+
+// 工地详情
+ES.Common.Detail =ES.Common.BaseDialog.extend({
+
+    afterOpen: function (id) {
+        var oParam = {
+            url: '/Site/Detail',
+            data: {Id: this.oBusData},
+            dataType: 'html',
+            type: 'Get'
+        };
+        ES.reqData(oParam, function (oResp) {
+            this.setContent(oResp.rtnData);
+        }, this);
+    },
+    initButton: function () {
+
+    }
+});
+
+// 工地配置
+ES.Common.Config =ES.Common.BaseDialog.extend({
+
+    afterOpen: function (id) {
+        var oParam = {
+            url: '/Site/Configure',
+            data: {Id: this.oBusData},
+            dataType: 'html',
+            type: 'Get'
+        };
+        ES.reqData(oParam, function (oResp) {
+            this.setContent(oResp.rtnData);
+        }, this);
+    },
+    initButton: function () {
+
+    }
+});
+
+//保存工地出口名字
+// ES.Common.Config = ES.Common.DialogEdit.extend({
+//
+//     afterOpen:function() {
+//         var content = "<div></div>"
+//         ES.reqData(oParam, function (oResp) {
+//             this.setContent(oResp.rtnData);
+//         }, this);
+//     },
+//
+//     save: function () {
+//         ES.loadAn($(this.oDialog.node));
+//         ES.getData($("#_SiteFrm").serialize(),"/Site/Edit",this.saveHandler,this);
+//
+//     },
+//
+//     saveHandler: function (oData) {
+//         ES.Common.DialogEdit.prototype.saveHandler.call(this,oData);
+//         if(oData.IsSuccess) {
+//             this._oParent.oGrid.query({});
+//             this._oParent.oTree.reload();
+//         }
+//     },
+// });
+
+// 添加工地出口
+ES.Common.addExit =ES.Common.BaseDialog.extend({
+    initDialog: function () {
+        var  oDOption={
+            fixed: true,
+            align: 'right bottom',
+            title: '工地出口管理',
+            content: template('exitManageTpl', {})
+        };
+        ES.extend(oDOption,this.oDOption)
+        var oDiaLog = dialog(oDOption);
+        this.oDialog = oDiaLog;
+        return oDiaLog;
+    },
+    afterOpen:function(id) {
+        var nMapWidth = 760;
+        var nMapHeight = 480;
+
+        this.oMapMaster = new L.MapLib.MapMaster.Map(this, {
+            cDidId: 'RoadModelMap',
+            oMapOption: {
+                zoomControl: false,
+                layers: [],
+                center: new L.LatLng(27.344276, 103.723296),
+                zoom: 9,
+                attributionControl: false,
+            },
+            nMapWidth: nMapWidth,
+            nMapHeight: nMapHeight,
+        });
+
+        this.oMapMaster.loadMapMaster();
+
+        this.oMapMaster.reflesh(nMapWidth, nMapHeight);
+
+        this.oToolEdit = new ES.Common.ExitManage(this.oMapMaster, {
+            acParentDivClass: ['ex-layout-maptool', 'ex-theme-maptool', 'ex-map-top', 'ex-map-right','ex-maptool-edit'],
+        });
+
+        this.initSite();
+        this.initExit();
+        this.initMapEvent();
+
+    },
+    initSite:function(){
+        this._oSiteGroup = L.layerGroup();
+        this.oMapMaster._oMap.addLayer(this._oSiteGroup);
+
+        if (!this.oBusData) return;
+        var oSiteConfig = {
+            clickable:true,
+            color:"#0FFF05",
+            fill:true,
+            fillColor:"#0FFF05",
+            fillOpacity:0.2,
+            noClip:false,
+            opacity:1,
+            smoothFactor:1,
+            stroke:true,
+            weight: 3
+        };
+        var oInfo = this.oBusData;
+        oInfo.aoLatLag = this._getLatLng(oInfo.MapX,oInfo.MapY);
+        var oPolygon = L.polygon(oInfo.aoLatLag, oSiteConfig).addTo(this._oSiteGroup);
+        var oBound = new L.LatLngBounds(oInfo.aoLatLag);
+        var oLatLng = oBound.getCenter();
+        this.oMapMaster._oMap.setView( oLatLng,16)
+    },
+    initExit:function(){
+        var self = this;
+        this._oExitGroup = L.layerGroup();
+        this.oMapMaster._oMap.addLayer(this._oExitGroup);
+
+        $('.ex-layout-selected-exit').empty();
+
+        ES.loadAn($(this.oDialog.node));
+        ES.getData({id:parseInt(this.oBusData.Id)},"/Site/Entrances",function(oData){
+            ES.removeAn($(self.oDialog.node));
+            self.addExitList(oData,'first');
+            self.initExitPoly(oData);
+        });
+    },
+    showModal: function (oData,cTitle ) {
+        this.oBusData = oData;
+        if( cTitle){
+            this.oDialog.title(cTitle);
+        }
+
+        this.oDialog.showModal();
+    },
+    initButton:function(){
+
+    },
+    initMapEvent:function(){
+        var self = this;
+        this.oMapMaster.on('FenceView:UI.addFence', function (oData) {
+            if (oData && oData.aoLatLng) {
+                var xyArr = oData.aoLatLng[0];
+                var xArr = [], yArr = [];
+                for (var i = 0; i < xyArr.length; i++) {
+                    xArr.push(xyArr[i].lng.toFixed(6));
+                    yArr.push(xyArr[i].lat.toFixed(6));
+                }
+                var MapJson = JSON.stringify({ aoLatLng: xyArr, nType: oData.nType, oOption: oData.oOption });
+                self.saveExit(xArr,yArr,MapJson);
+            }
+        });
+
+        $('.ex-layout-selected-exit').on('click','a.ec-icon-trash-o',function(){
+           var cid = $(this).parent().attr('cid');
+            self._oParent.oDelExitD = new ES.Common.DelExit(self._oParent,{bRemove:true,cUrl:'/Site/EntranceDelete'},{
+                title: '删除操作-路口',
+                content: '是否要删除数据！'});
+            self._oParent.oDelExitD.del(parseInt(cid));
+        });
+
+    },
+    saveExit:function(MapX,MapY,MapJSON){
+        var self = this;
+        ES.loadAn($(this.oDialog.node));
+        var _index = $('.ex-layout-struckbox-content>label').length + 1;
+        var oParam = {
+            Id:"",
+            SiteId:this.oBusData.Id,
+            Name:$('#ExitName').val(),
+            MapJson:MapJSON,
+            GpsX:MapX.join(','),
+            GpsY:MapY.join(','),
+            MapX:MapX.join(','),
+            MapY:MapY.join(','),
+            Address:"地址待定"};
+        ES.getData(oParam,"/Site/EntranceEdit",function(oData){
+            ES.removeAn($(self.oDialog.node));
+            if (oData.IsSuccess) {
+                ES.aSucess('操作成功！');
+                self.initExit();
+                $('.ex-map-tool-edit').find('.ec-icon-ban').parent().click();
+            }
+            else {
+
+                ES.aErr(ES.template('操作失败: {Message}', oData));
+            }
+        });
+    },
+    //多边形坐标规范化
+    _getLatLng:function(mX,mY){
+        var _aolatlngs =[];
+        var MapX = mX.split(',');
+        var MapY = mY.split(',');
+
+        for(var i=0;i<MapX.length;i++){
+            var _latlng = {lat:MapY[i],lng:MapX[i]};
+            _aolatlngs.push(_latlng)
+        }
+
+        return _aolatlngs;
+    },
+    addExitList:function(oData,type){
+        var content = '';
+        for(var i=0;i<oData.length;i++){
+            var item = oData[i];
+            content += '<label cid="'+ item.Id +'"><span>' +item.Name +'</span>' +
+                '<a class="ec-btn ec-btn-sm ec-btn-primary ec-icon-edit" style="display:none"></a>' +
+                '<a class="ec-btn ec-btn-sm ec-icon-trash-o"></a>' +
+                '</label>';
+        }
+        if(!type){
+            $('.ex-layout-selected-exit').append(content);
+        }else{
+            $('.ex-layout-selected-exit').html(content);
+        }
+
+    },
+    delExitList:function(id){
+        $('.ex-layout-selected-exit').find('label[cid="'+ id +'"]').remove();
+        this.delExitPoly(id)
+    },
+    initExitPoly:function(aoSiteInfo){
+        this.oToolEdit._oDrawLayer.clearLayers()
+        for (var i = 0; i < aoSiteInfo.length; i++) {
+            if (!aoSiteInfo[i]) {
+                continue;
+            }
+            this._drawPolygonExit(aoSiteInfo[i]);
+        }
+    },
+    delExitPoly:function(id){
+        var oDrawLayer = this.oToolEdit._oDrawLayer;
+        var oTemp = this.findLayer(oDrawLayer, id);
+        oDrawLayer.removeLayer(oTemp);
+        oDrawLayer.removeLayer(oTemp.oMarker);
+    },
+    _drawPolygonExit:function(oPosInfo){
+        if (!this.oToolEdit._oDrawLayer || !oPosInfo) {
+            return;
+        }
+        var oDrawLayer = this.oToolEdit._oDrawLayer;
+        var oTemp = this.findLayer(oDrawLayer, oPosInfo.Id);
+        if (oTemp) {
+            return;
+        }
+
+        var oPolygon = null;
+
+
+        // 中心点
+        var oLatLng = null;
+        var _aolatlngs = this._getLatLng(oPosInfo.MapX,oPosInfo.MapY);
+        oPolygon = L.polygon(_aolatlngs,  this.oToolEdit.oOption.oPenStyle).addTo(oDrawLayer);
+        var oBound = new L.LatLngBounds(_aolatlngs);
+        oLatLng = oBound.getCenter();
+        oPolygon.cId = oPosInfo.Id;
+
+        var oIcon = this._getIcon(oPosInfo.Name);
+        oPolygon.oMarker = L.marker(oLatLng, { icon: oIcon }).addTo(oDrawLayer);
+
+        oPolygon.oPosInfo = oPosInfo;
+        return oPolygon;
+    },
+    _getIcon: function (name) {
+
+        var oIcon = L.divIcon({
+            iconSize: [20, 20], iconAnchor: [50, 25],
+            popupAnchor: [-1, -20],
+            className: "",
+            html:'<div class="ex-monitor-mapicon-site alert">' +
+            '        <div class="pin-tip" style="display: block;">' +
+            '           <div class="areaCount-number">'+name+
+            '     </div></div></div>'
+        });
+        return oIcon;
+    },
+    findLayer: function (oGroupLayer, cId) {
+        if (!oGroupLayer || oGroupLayer.getLayers().length <= 0) {
+            return null;
+        }
+
+        var aoLayer = oGroupLayer.getLayers();
+
+        for (var oLayer in aoLayer) {
+            if (aoLayer[oLayer].cId === cId) {
+                return aoLayer[oLayer];
+            }
+        }
+
+        return null;
+    },
+})
+
+
+
+// 删除路口界面，删除完成
+ES.Common.DelExit =ES.Common.DialogDel.extend({
+
+    save: function () {
+        if (!this.oBusData) {
+            ES.aWarn(ES.Lang.BaseDialog[30]);
+            return;
+        }
+
+        ES.loadAn($(this.oDialog.node));
+
+        ES.getData({entryId:this.oBusData}, this.oOption.cUrl, this.saveHandler, this);
+    },
+
+    saveHandler: function (oData) {
+        ES.Common.DialogDel.prototype.saveHandler.call(this,oData);
+        if(oData.IsSuccess) {
+            this._oParent.oAddExitD.delExitList(this.oBusData);
+        }
+    },
+});

@@ -1,0 +1,214 @@
+/**
+ * Created by YangHang on 2018/1/24.
+ */
+
+ES.SelectRoad.RoadLayer = L.MapLib.MapMaster.MapOpr.extend({
+
+    //执行画点，画线操作
+    oOption: {
+
+        oStyleConfig: {
+
+            stroke: true,
+            color: 'green',
+            dashArray: null,
+            lineCap: null,
+            lineJoin: null,
+            weight: 3,
+            opacity: 1,
+            fill: false,
+            fillColor: null,
+            fillOpacity: 0.2,
+            clickable: false,
+            smoothFactor: 1.0,
+            noClip: false
+
+        },
+
+        oStyleSmallConfig: {
+
+            stroke: true,
+            color: 'green',
+            dashArray: null,
+            lineCap: null,
+            lineJoin: null,
+            weight: 2,
+            opacity: 1,
+            fill: false,
+            fillColor: null,
+            fillOpacity: 0.2,
+            clickable: false,
+            smoothFactor: 1.0,
+            noClip: false
+
+        },
+
+        cHtml: '<div class="{cCls}"><div class="{cBCls}"></div><div class="{cTCls}">{Name}</div></div>'
+    },
+
+    initialize: function (oParent, oOption,oMap) {
+        oOption = L.setOptions(this, oOption);
+
+        this._oParent = oParent;
+        this._oMap = oMap._oMap;
+        // 添加监听事件
+        this._initOn();
+        ES.setOptions(this, oOption);
+        // 执行自己的方法
+        this._initGroup();
+        this._loadOn();
+    },
+
+    // 初始化Group
+    _initGroup: function () {
+
+        //把所有的圆点区域绘制在分组图层中
+        this._oPolylineGroup = L.featureGroup();
+        this._oMap.addLayer(this._oPolylineGroup);
+
+    },
+
+    //初始化时加载数据
+    _loadOn: function () {
+
+
+        //给界面赋值，并画工地
+        this._oParent.on('SelectRoad:drawlayers', this.drawlayers, this);
+
+        this._oParent.on("Drawlayers:removelayers", this.removeLayers, this);
+
+        this._oParent.on('Drawlayers:clearAll', this.clearAll, this);
+
+        this._oParent.on('Drawlayers:fitBounds',this.fitBounds,this)
+    },
+
+
+    drawlayers: function (oData) {
+        if (!oData || !oData.aoData) {
+            return;
+        }
+
+        var aoLatLnt = [];
+        for (var i = 0; i < oData.aoData.length; i++) {
+            if (!oData.aoData[i].data || !oData.aoData[i].data.Id) {
+                continue;
+            }
+            var oLayer = this.findLayer(this._oPolylineGroup, oData.aoData[i].data.Id);
+            if (oLayer) {
+                continue;
+            }
+            this.drawLayer(oData.aoData[i], oData.cTarget);
+        }
+
+        this._oMap.fitBounds(this._oPolylineGroup.getBounds());
+
+    },
+
+
+    drawLayer: function (oData, cTarget) {
+        if (!oData) {
+            return;
+        }
+
+        // 编辑邮路,画围栏时要表明自己的名称
+        var oVehLine = this.createLayer(oData, cTarget);
+        if (!oVehLine) {
+            return;
+        }
+        oVehLine.cId = oData.data.Id;
+
+        var cHtml = ES.Util.template(this.cHtml, oData.data);
+
+        if(oData.data.speed){
+              cHtml = ES.Util.template(this.cSpeedHtml, oData.data);
+        }
+
+        var oIcon = this._getIcon(cHtml);
+
+        var oMarker = L.marker(oVehLine.getLatLngs()[0], { icon: oIcon });
+
+        oMarker.addTo(this._oPolylineGroup);
+
+        oVehLine.oMarker = oMarker;
+    },
+
+    // 设置图层设置
+    createLayer: function (oData, cTarget) {
+        var oVehLine = null;
+        if (!oData || !oData.data || !oData.data.MapY) {
+            return oVehLine;
+        }
+
+        var aoLatLng = [];
+        var lats = oData.data.MapY.split(",");
+        var lngs = oData.data.MapX.split(",");
+        for (var j = 0; j < lats.length; j++) {
+            aoLatLng.push({lat: lats[j], lng: lngs[j]});
+        }
+
+        ES.extend(this.oOption.oStyleConfig, this._getLineColor(oData, cTarget));
+
+        oVehLine = L.polyline(aoLatLng, this.oOption.oStyleConfig).addTo(this._oPolylineGroup);
+
+        return oVehLine;
+    },
+
+    _getLineColor: function (oData, cTarget) {
+
+        return {color: 'red'};
+    },
+
+    // 画点
+    _getIcon: function (cHtml) {
+
+        var oIcon = L.divIcon({
+            iconSize: [0, 0], iconAnchor: [0, 0],
+            popupAnchor: [-1, -20],
+            className: "",
+            html: cHtml,
+        });
+        return oIcon;
+    },
+
+    removeLayers: function (oData) {
+        var aoData = oData.aoData;
+        for (var i = 0; i < aoData.length; i++) {
+            var oLayer = this.findLayer(this._oPolylineGroup, aoData[i].data.Id);
+            if (!oLayer) continue;
+            if (oLayer.oMarker) {
+                this._oPolylineGroup.removeLayer(oLayer.oMarker);
+            }
+            this._oPolylineGroup.removeLayer(oLayer);
+        };
+    },
+
+    clearAll: function () {
+        this._oPolylineGroup.clearLayers();
+    },
+
+
+    fitBounds:function(data){
+        var oLayer = this.findLayer(this._oPolygonSiteGroup,parseInt(data.cid));
+        if(oLayer){
+            this._oMap.fitBounds(oLayer.getLatLngs());
+        }
+    },
+
+});
+
+
+ES.SelectRoad.RoadLayer.include({
+    cSpeedHtml:
+    '<div class="ex-monitor-mapicon-site" style=" top:-20px;left:-20px">' +
+    '           <div class="pin-tip" style="display: block;">' +
+    '               <div class="areaCount-number">{Name}</div>' +
+    '           </div>' +
+    '           <div class="site-body areaCount">{speed}</div>' +
+    '       </div>',
+    cHtml:
+    '<div class="ex-monitor-mapicon-site" style=" top:-20px;left:-20px">' +
+    '           <div class="pin-tip" style="display: block;">' +
+    '               <div class="areaCount-number">{Name}</div>' +
+    '           </div>' +
+    '       </div>'
+});

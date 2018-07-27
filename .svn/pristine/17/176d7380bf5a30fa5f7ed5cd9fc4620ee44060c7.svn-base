@@ -1,0 +1,58 @@
+/**
+ * Created by liulin on 2017/9/1.
+ */
+
+ES.Muck.Grid = ES.Common.BaseJqGrid.extend({
+
+    // 查询gird 用户信息
+    setColumns: function () {
+
+        this.aoCol =[
+            { label: '消纳名称', name: 'Name', align: "center", sortable: false },
+            { label: '所属地区', name: 'AreaName', align: "center", sortable: false },
+            { label: '占地面积', name: 'AreaCovered', align: "center", sortable: false },
+
+            { label: '消纳开始日期', name: 'WorkTimeStartDay', align: "center", sortable: false },
+            { label: '消纳结束日期', name: 'WorkTimeEndDay', align: "center", sortable: false },
+            { label: '消纳点状态', name: 'StateStr', align: "center", sortable: false },
+
+            {
+                label: '操作', name: "Id", align: "center", width: 380, sortable: false,
+                formatter: function (val, opt, item) {
+                    var content = '';
+                    content += '<button class="ec-btn ec-btn-xs ec-btn-default detail"'+ UnloadAuth.unloaddetail +'><i class="ec-icon-eye detail"></i>  详情</button>';
+                    content += '  ';
+                    content += '<button class="ec-btn ec-btn-xs ec-btn-primary edit"'+ UnloadAuth.unloadedit +'><i class="ec-icon-edit edit"></i>  编辑</button>';
+                    content += '  ';
+                    content += '<button class="ec-btn ec-btn-xs ec-btn-danger del"'+ UnloadAuth.unloaddel +'><i class="ec-icon-trash-o del"></i>  删除</button>';
+
+                    return content;
+
+                }
+            }
+        ];
+    },
+
+    initClick: function (e, oModel) {
+        if (!e) {
+            return;
+        }
+
+        if ($(e.target).hasClass('edit')) {
+            this._oParent.oEditD = new ES.Common.Dialog(this._oParent,{bRemove:true,cUrl:'/Unload/Edit'});
+            this._oParent.oEditD.editShow(oModel);
+        }
+        if ($(e.target).hasClass('del')) {
+            this._oParent.oDelD = new ES.Common.DelEntity(this._oParent,{bRemove:true,cUrl:'/Unload/Delete'},{
+                title: '删除操作-消纳点',
+                content: '是否要删除数据！'});
+            this._oParent.oDelD.del(oModel);
+        }
+        if ($(e.target).hasClass('detail')) {
+            this._oParent.oDetailD = new ES.Common.Detail(this._oParent,{bRemove:true,cUrl:'/Unload/Detail/1032'},{title: '详情-消纳点'});
+            this._oParent.oDetailD.showModal(oModel);
+        }
+    }
+
+});
+

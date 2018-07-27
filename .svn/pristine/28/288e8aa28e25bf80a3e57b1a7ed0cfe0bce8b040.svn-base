@@ -1,0 +1,201 @@
+/**
+ * 负责加载grid数据
+ *
+ * Created by liulin on 2017/8/31.
+ */
+
+ES.Muck.Grid = ES.Common.BaseJqGrid.extend({
+    initialize: function (oParent, oOption,oJqGridOption) {
+        ES.setOptions(this, oOption);
+
+        this._oParent = oParent;
+
+        this.aoCol = [];
+        this.setColumns();
+        this.initOn();
+        this.initUI();
+
+        this._countUrl = oJqGridOption.countUrl;
+        this.initCount("");
+
+        this.oSearchInput = $('#form-event-type-name');
+        this.oSearchBtn = $('#form-event-type-search');
+
+        var self = this;
+        ES.extend(
+            this.oJqGridOption,
+            oJqGridOption,
+            {
+                onSelectRow: function (cId, d, e) {
+                    var record = $(this).data('oData').dataList[parseInt(cId) - 1];
+                    self.initClick(e, record);
+                },
+                colModel: this.aoCol,
+                pager: '#' + this.oOption.cPagerContainer,
+                loadComplete: function (data) {
+                    self.gridData = data;
+                    //缓存数据到控件
+                    $(this).data('oData', data);
+                },
+                gridComplete: function () {
+                    $('.ec-btn-dropdown button').on('click', function (e) {
+                        $(this).parents('tr.ui-widget-content').siblings('tr.ui-widget-content').find('.ec-dropdown-content').hide(200)
+                        $(this).siblings().toggle('fast');
+                        var self = $(this);
+                        $("body").one("click", function () {//对document绑定一个影藏Div方法
+                            self.siblings().hide(200);
+                        });
+                        e.stopPropagation();
+                    })
+
+                }
+            });
+        //this.reflesh(this.oOption.nWidth, this.oOption.nHeight);
+        //this.initGrid();
+
+        this.initEvent();
+        //$('.ec-radio-inline>input#qualificationAll').attr("checked", true);
+    },
+
+    setColumns:function(){
+       var list =  [
+            { label: '车牌号', name: 'VehicleNo', editable: true ,sortable: false,width:60, align: 'center'},
+            { label: '所属企业', name: 'ResourceTypeName', editable: true,sortable: false,width:120, align: 'center' },
+            { label: '所属地区', name: 'DistName', editable: true,sortable: false,width:60, align: 'center' },
+            { label: '设备安装时间', name: 'InstallTime', editable: true,sortable: false,width:100, align: 'center' },
+            // { label: '车辆品牌', name: 'DeviceBrand', editable: true , align: 'center'},
+            // { label: '行车证号', name: 'TransportPermit', editable: true, align: 'center' },
+            // { label: '道路运输许可证', name: 'TransportBusiness', editable: true , align: 'center'},
+            // { label: '核准证号', name: '', editable: true , align: 'center'},
+            { label: '最近审核时间', name: 'CheckDate', editable: true,sortable: false, align: 'center' ,width:80},
+            { label: '资质状态', name: 'Qualification', editable: true ,sortable: false,width:75, align: 'center',
+                formatter: function (cellValue, options, rowObject) {
+                    if(cellValue == '资质过期'){
+                        var _class = "ex-danger";
+                    }else if(cellValue == '备案车辆'){
+                        var _class = "ex-primary";
+                    }else if(cellValue == '资质车辆'){
+                        var _class = "ex-success";
+                    }
+                     var content = '<span class="ex-state-tag '+ _class +'">'+ cellValue +'</span>'
+                    return content;
+                }
+            },
+           { label: '备注', name: 'Remark', editable: true,sortable: false, align: 'center' ,width:60},
+            {
+                label: '操作',
+                name: '',
+                classes:'visable',
+                width: 100,
+                sortable: false,
+                align: 'center',
+                title: false,
+                formatter: function (cellValue, options, rowObject) {
+
+                    var content = '';
+                    content += '<button  class="ec-btn ec-btn-xs ec-btn-default ec-radius edit"' + VehnicleInfoAuth.vehnicleEdit + '><i class="ec-icon-edit edit"></i>  编辑</button>';
+                    content += '  ';
+                    content += '<button  class="ec-btn ec-btn-xs ec-btn-default ec-radius view"' + VehnicleInfoAuth.vehnicleDetail + '><i class="ec-icon-eye view"></i>  详情</button>';
+                    content += '  ';
+                    content += '<button  class="ec-btn ec-btn-xs ec-btn-primary ec-radius Annual"' + VehnicleInfoAuth.vehnicleAnnual + '>  资质审核</button>';
+                    content += '  ';
+                    content += '<button  class="ec-btn ec-btn-xs ec-btn-primary ec-radius Assigned"' + VehnicleInfoAuth.vehnicleAssigned + '>  企业挂靠</button>';
+                    // content += '<div class="ec-btn-dropdown" id="ec-dropdown-' + parseInt(rowObject.OrderID) + '">' +
+                    //     '<button class="ec-btn ec-btn-primary ec-dropdown-toggle">下拉列表 <span class="ec-icon-caret-down"></span></button>' +
+                    //     '<ul class="ec-dropdown-content">'+
+                    //     '<li><a href="#" class="Annual">车辆变更</a></li>' +
+                    //     '<li><a href="#" class="Assigned">车辆过户</a></li>' +
+                    //     '</ul>' +
+                    //     '</div>';
+                    return content;
+                }
+            }
+        ];
+
+        this.aoCol = list;
+    },
+
+    initClick: function (e, oModel) {
+        if (!e) {
+            return;
+        }
+        // if ($(e.target).hasClass('edit')) {
+        //     this._oParent.oEditD = new ES.Common.Dialog(this,{bRemove:true,cUrl:'/Vehicle/Edit'});
+        //     this._oParent.oEditD.editShow(oModel.RoleId);
+        // }
+        // if ($(e.target).hasClass('del')) {
+        //     this._oParent.oDelD = new ES.Common.DelEntity(this._oParent,{bRemove:true,cUrl:'/Vehicle/Delete'},{
+        //         title: '删除操作-车辆',
+        //         content: '是否要删除数据！'});
+        //     this._oParent.oDelD.del(oModel);
+        // }
+        if ($(e.target).hasClass('edit')) {
+            this._oParent.oEditD = new ES.Common.vehicleEdit(this._oParent, { bRemove: true, cUrl: '/Vehicle/Edit' });
+            this._oParent.oEditD.editShow(oModel);
+        }
+        if ($(e.target).hasClass('view')) {
+            this._oParent.oDetailD = new ES.Common.Detail(this._oParent, { bRemove: true, cUrl: '/Vehicle/Detail'},
+                { title: '车辆详情 — 车牌号：'+oModel.VehicleNo }
+                );
+            this._oParent.oDetailD.showModal(oModel);
+        }
+        if ($(e.target).hasClass('Annual')) {
+            this._oParent.oEditAnnualD = new ES.Common.EditAnnual(this._oParent,{
+                bRemove:true,
+                cUrl:'/VehicleAsset/Check',
+                title:'车辆资质审核 — 车牌号：'+oModel.VehicleNo+' — 所属企业：'+oModel.ResourceTypeName,
+                ResourceId:oModel.ResourceTypeId
+            });
+            this._oParent.oEditAnnualD.editShow(oModel.Id);
+        }
+        if ($(e.target).hasClass('Assigned')) {
+            this._oParent.oEditAssignedD = new ES.Common.EditAssigned(this._oParent,{
+                bRemove:true,
+                cUrl:'/VehicleAsset/Transfer',
+                title:'企业挂靠',
+                VehNo:oModel.VehicleNo,
+                ResourceName:oModel.ResourceTypeName,
+                oTreeOption:{
+                    core: {
+                        'animation': 0,
+                        'check_callback': true,
+
+                        'state': {'opened': true},
+                        'data': {
+                            url: '/Enterprise/Tree',
+                            type: 'POST'
+                        }
+                    },
+                    checkbox:{
+                        tie_selection:false,
+                    },
+
+                    plugins: [ 'types', 'search','unique']
+                },
+            });
+            this._oParent.oEditAssignedD.editShow(oModel.Id);
+        }
+    },
+    initCount:function(ResourceTypeId){
+            ES.getData({ResourceTypeIds:ResourceTypeId},this._countUrl,function(data){
+            var CountItems = $('.ex-vehicle-classify>li>span');
+            CountItems.eq(0).html(data.total);//车辆总数
+            CountItems.eq(1).html(data.normal);//资质车辆
+            CountItems.eq(2).html(data.never);//备案车辆
+            CountItems.eq(3).html(data.expired);//资质过期
+        })
+    },
+    resizeBody: function () {
+        var self = this;
+        $(window).resize(function () {
+            $(self.oOption.cContainer).css("width", $(window).width() - $('.ex-layout-sider').width()+'px');
+            $(self.oOption.cContainer).css({ height: $(window).height() });
+            $('#' + self.oOption.cGridContainer).setGridWidth($(self.oOption.cContainer).width());
+            $('#' + self.oOption.cGridContainer).setGridHeight($(self.oOption.cContainer).height() - $('.ex-vehicle-batch').height() - $('.ex-layout-form-search').height() - 85);
+        });
+
+    },
+});
+
+
+

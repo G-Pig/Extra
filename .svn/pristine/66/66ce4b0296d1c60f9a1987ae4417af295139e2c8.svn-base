@@ -1,0 +1,63 @@
+/**
+ * 负责加载grid数据
+ *
+ * Created by liulin on 2017/8/31.
+ */
+
+ES.Muck.Grid = ES.Common.BaseJqGrid.extend({
+
+    setColumns:function(){
+       var list =  [
+            { label: '合同名称', name: 'Name', align: 'center', width: 100 },
+           { label: '合同编码', name: 'Code', align: 'center', width: 80 },
+            { label: '签订日期', name: 'SignData', align: 'center', width: 120 },
+            { label: '甲方', name: 'FirstParty', align: 'center', width: 80  },
+            { label: '乙方', name: 'SecondParty', align: 'center', width: 80 },
+            { label: '工程项目', name: 'Project', align: 'center', width: 250 },
+            {
+                label: "操作",
+                name: "actions",
+                align: 'center',
+                width: 150,
+                formatter: function formatHtml(cellValue, options, rowObject) {
+
+                    var content = '';
+                    content+= '<button class="ec-btn ec-radius ec-btn-xs ec-btn-primary File"><i class="ec-icon-edit File"></i> 文件管理</button>';
+                    content+= '  ';
+                    content+= '<button class="ec-btn ec-radius ec-btn-xs ec-btn-primary edit"><i class="ec-icon-edit edit"></i> 编辑</button>';
+                    content+= '  ';
+                    content+= '<button class="ec-btn ec-btn-xs ec-btn-default ec-radius del"><i class="ec-icon-trash-o del"></i> 删除</button>';
+
+                    return content;
+                }
+            }
+        ];
+
+        this.aoCol = list;
+    },
+
+    initClick: function (e, oModel) {
+        if (!e) {
+            return;
+        }
+        if ($(e.target).hasClass('File')) {
+            this._oParent.oFileD = new ES.Common.FileDig(this._oParent,{bRemove:true},{
+                title: '合同文件管理',
+                content: '<div id="CMFile" style="width: 800px;height: 400px;overflow: hidden"></div>'});
+            this._oParent.oFileD.del(oModel.Id);
+        }
+        if ($(e.target).hasClass('edit')) {
+            this._oParent.oEditD = new ES.Common.Dialog(this,{bRemove:true,cUrl:'/ContractManager/Edit'});
+            this._oParent.oEditD.editShow(oModel.Id);
+        }
+        if ($(e.target).hasClass('del')) {
+            this._oParent.oDelD = new ES.Common.DelEntity(this._oParent,{bRemove:true,cUrl:'/ContractManager/Delete'},{
+                title: '删除操作-用户',
+                content: '是否要删除数据！'});
+            this._oParent.oDelD.del(oModel);
+        }
+    }
+});
+
+
+

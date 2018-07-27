@@ -1,0 +1,232 @@
+//上传和导出按钮和查询按钮
+ES.Muck.Search = ES.Muck.BaseSearch.extend({
+    initUI: function () {
+        this.oExportBtn = $('#ExportBtn');//导出按钮
+        this.oUploadBtn = $('#UploadBtn');//上报按钮
+        this.oSearchBtn = $('#SearchBtn');//查询按钮
+        this.oEnterpriceId = $('#EnterpriceId');//企业名称
+        this.oEId = $('#s_h_EnterpriceId');//企业Id
+        this.oSiteName = $('#SiteName');//区域名称
+        this.oSNm = $('#s_h_SiteName');//区域Id
+        this.oStartDate = $('#startDate');//上报时间
+        this.oStatus = $('#status');//审核状态
+        this.oSiteBtn=$('#SiteBtn');//上报工地
+        this.oDownBtn = $('#downBtn');
+    },
+
+    initEvent: function () {
+        var self = this;
+        //选择状态
+        ES.getData({}, "/SelectDataJson/GetActLis", function (data) {
+            var optionstring = "";
+            for (var i = 0; i < data.length; i++) {
+                optionstring += "<option value=\"" + data[i].Value + "\" >" + data[i].Text + "</option>"
+            };
+            self.oStatus.append(optionstring);
+        })
+        //时间控件
+        var cDate = new Date().toLocaleDateString().replace(/\//g, "-");
+        this.oStartDate.val(cDate)
+
+        this.oStartDate.click(function () {
+            WdatePicker({
+                dateFmt: "yyyy-MM-dd",
+                isShowClear: false,
+                maxDate:"%y-%M-%d"
+            });
+        });
+        //清除按钮
+        $("a.ex-input-clear-btn").click(function () {
+            $(this).parent().siblings("input").val("");
+        });
+        //查询按钮
+        this.oSearchBtn.bind('click', function () {
+            var oEnterpriceId = self.oEId.val();
+            var CurrentTime = self.oStartDate.val();
+            var oStatus = self.oStatus.val();
+            var cDepartmentName = self.oSNm.val();
+            var oParam = {
+                EnterpriceId: oEnterpriceId,
+                CurrentTime: CurrentTime,
+                QActId: oStatus,
+                QDepartmentId:cDepartmentName
+            };
+            // 触发查询
+            self._oParent.oGrid.query({ oParam: oParam });
+        });
+
+        //导出按钮
+        this.oExportBtn.bind('click', function () {
+            var EnterpriceId = self.oEId.val();
+            var CurrentTime = self.oStartDate.val();
+            var oStatus = self.oStatus.val();
+            var cDepartmentName = self.oSNm.val();
+            window.location.href = "/UploadSite/UploadSiteExport?EnterpriceId=" + EnterpriceId + "&CurrentTime=" + CurrentTime + "&QActId=" + oStatus+"&QDepartmentId="+cDepartmentName;
+        });
+        var oParent = this._oParent;
+        //上传按钮
+        this.oUploadBtn.bind('click', function () {
+            oParent.oEditD = new ES.Common.uploadEdit(oParent, {
+                bRemove: true, cUrl: '/UploadSite/Edit',
+            }, { title: "上传工地车辆" });
+            oParent.oEditD.showModal();
+        });
+        //上报工地按钮
+        this.oSiteBtn.bind('click',function(){
+            oParent.oEditD = new ES.Common.uploadSiteDialog(oParent, {
+                bRemove: true, cUrl: '/UploadSite/PartialSelectSite',
+            }, { title: "上传工地" });
+            oParent.oEditD.addShow();
+        });
+        //下载模版
+        this.oDownBtn.bind('click',function(){
+            window.location.href = '/UploadSite/DownFileExcelTemplte';
+        })
+    },
+});
+//分析按钮和导入按钮
+ES.Muck.DialogBtn = ES.Muck.BaseSearch.extend({
+    initUI: function () {
+        this.oAnalysisBtn = $('#AnalysisBtn');//分析按钮
+        this.oUploadFileBtn = $('#UploadFileBtn');//文件导入
+        this.oEId = $('#s_h_EnterpriceInside');//企业ID
+        this.oSId = $('#s_h_Site');//工地ID
+    },
+
+    initEvent: function () {
+        var self = this, oParam;
+        this.oAnalysisBtn.on('click', function (e) {
+            var EnterpriceId = self.oEId.val();//企业ID
+            var UploadSiteId = self.oBusData == undefined ? null : self.oBusData;//区域ID
+            var SiteId = self.oSId.val();//区域ID
+            if (!EnterpriceId) {ES.aWarn("请选择企业！");return};
+            if (!SiteId) { ES.aWarn("请选择工地！"); return };
+            var cancleData = "";
+            var uploadData = "";
+            if (!self._oParent.oGrid.gridData) {
+                VehcleNoS = $('#siteReportsInput').val();//若没有表格数据，则直接加载textarea里的数据
+                if (!VehcleNoS) { ES.aWarn("请输入车牌号！"); return };
+                //if(VehcleNoS.indexOf("")-1)
+                oParam = {
+                    VehcleNoS: VehcleNoS,
+                    EnterpriceId: EnterpriceId,
+                    UploadSiteId: UploadSiteId,
+                    SiteId: SiteId
+                }
+                self._oParent.oGrid.query({ oParam: oParam });//重新渲染表格
+                $('#siteReportsInput').val("");//清空textarea数据
+            } else {
+                var oGridData = self._oParent.oGrid.gridData.dataList;
+                for (var i = 0; i < oGridData.length; i++) {
+                    if (oGridData[i].Status == 3) {//修改的条件来判断是否进行了作废
+                        cancleData += oGridData[i].VehicleNo + ",";//作废的车辆
+                    } else {
+                        uploadData += oGridData[i].VehicleNo + ",";//没作废的车辆
+                    }
+                }
+                uploadData += $('#siteReportsInput').val();//包含表格里的选中车牌号和textarea里的车牌号
+                oParam = {
+                    VehcleNoS: uploadData,
+                    EnterpriceId: EnterpriceId,
+                    UploadSiteId: UploadSiteId,
+                    SiteId: SiteId
+                }
+                self._oParent.oGrid.query({ oParam: oParam });
+                $('#siteReportsInput').val("");
+            }
+            e.cancelBubble = true;
+        });
+        this.oUploadFileBtn.on('change', function (event) {
+            $('#uploadForm').ajaxSubmit({
+                type: "post",
+                url: "/UploadSite/GetVehcleNoByExcel",
+                data: self.oUploadFileBtn.val(),
+                dataType: "json",
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader("Test", "testheadervalue");
+                },
+                error: function (data) {
+                    ES.aWarn("请确认格式是否正确！");
+                    return
+                },
+                success: function (data) {
+                    $('#siteReportsInput').val(data);
+                    self.oUploadFileBtn.val("");
+                }
+            });
+            event.cancelBubble = true;
+        });
+    }
+});
+//Re分析按钮和导入按钮
+ES.Muck.ReDialogBtn = ES.Muck.BaseSearch.extend({
+    initUI: function () {
+        this.oAnalysisBtn = $('#AnalysisBtn');//分析按钮
+        this.oUploadFileBtn = $('#UploadFileBtn');//文件导入
+        this.oEId = $('#EnterpriceInside');//企业ID
+        this.oSId = $('#Site');//企业ID
+    },
+
+    initEvent: function () {
+        var self = this,oParam;
+        this.oAnalysisBtn.on('click', function (event) {
+            var EnterpriceId = self.oEId.val();//企业ID
+            var UploadSiteId = self._oParent.oGrid.gridData.exparameters.UploadSiteId;//区域ID
+            var SiteId = self.oSId.val();//区域ID
+            if (!EnterpriceId) { ES.aWarn("请选择企业！"); return };
+            if (!SiteId) { ES.aWarn("请选择工地！"); return };
+
+            //var gridData = $(self._oParent.oGrid.oJqGrid.selector).jqGrid("getRowData");//获取所有数据
+            var cancleData = "";
+            var uploadData = "";
+            if (!self._oParent.oGrid.gridData) {
+                VehcleNoS = $('#siteReportsInput').val();//若没有表格数据，则直接加载textarea里的数据
+                if (!VehcleNoS) { ES.aWarn("请输入车牌号！"); return };
+                oParam = {
+                    VehcleNoS: VehcleNoS,
+                    EnterpriceId: EnterpriceId,
+                    UploadSiteId: UploadSiteId,
+                    SiteId: SiteId
+                }
+                self._oParent.oGrid.query({ oParam: oParam });//重新渲染表格
+                $('#siteReportsInput').val("");//清空textarea数据
+            } else {
+                var oGridData = self._oParent.oGrid.gridData.dataList;
+                for (var i = 0; i < oGridData.length; i++) {
+                    if (oGridData[i].Status == 3) {//修改的条件来判断是否进行了作废
+                        cancleData += oGridData[i].VehicleNo + ",";//作废的车辆
+                    } else {
+                        uploadData += oGridData[i].VehicleNo + ",";//没作废的车辆
+                    }
+                }
+                uploadData += $('#siteReportsInput').val();//包含表格里的选中车牌号和textarea里的车牌号
+                oParam = {
+                    VehcleNoS: uploadData,
+                    EnterpriceId: EnterpriceId,
+                    UploadSiteId: UploadSiteId,
+                    SiteId: SiteId
+                }
+                self._oParent.oGrid.query({ oParam: oParam });
+                $('#siteReportsInput').val("");
+            };
+            event.cancelBubble = true;
+        });
+        this.oUploadFileBtn.on('change', function (event) {
+            $('#uploadForm').ajaxSubmit({
+                type: "post",
+                url: "/UploadSite/GetVehcleNoByExcel",
+                data: self.oUploadFileBtn.val(),
+                dataType: "json",
+                error: function (data) {
+                    ES.aWarn("请确认格式是否正确！");
+                    return
+                },
+                success: function (data) {
+                    $('#siteReportsInput').val(data);
+                    self.oUploadFileBtn.val("");
+                }
+            });
+            event.cancelBubble = true;
+        });
+    }
+});

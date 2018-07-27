@@ -1,0 +1,195 @@
+/**
+ *  小地图监控
+ * Created by YangHang on 2018/3/1.
+ */
+
+
+ES.VehInfo.MapLive = ES.MapView.MapLive.extend({
+
+    // 地图弹出的宽带设置
+    oPopOption: {maxWidth: 500},
+
+    // 注册弹出层事件
+    _getVecMarkerHtml: function (oGpsInfo) {
+
+        var cDir = ES.TrackHelper.getDire(oGpsInfo.dir);
+        var cMsg = ES.TrackHelper.getDateMsg(oGpsInfo.gpsTime);
+        var oTemp = {};
+
+        ES.extend(oTemp, oGpsInfo, {
+            cMsg: cMsg,
+            cDir: cDir,
+            Mileage: oGpsInfo.mile / 1000,
+            cGpsDate: ES.Util.dateFormat(oGpsInfo.gpsTime, "yyyy-MM-dd hh:mm:ss"),
+            cVehicleStatus: oGpsInfo.sta || '通讯中断',
+            cPoiInfo: oGpsInfo.poi || '',
+            map: oGpsInfo.sta === "通讯中断"||oGpsInfo.sta === "定位失败" ? 'off' : 'on',
+            key: oGpsInfo.status.accStatus === '1' ? 'on' : '',
+            open: oGpsInfo.status.vehicleDoorStatus === '1' ? 'on' : '',
+            signal: oGpsInfo.sta !== "通讯中断" ? 'on' : '',
+            weight:this.weightStatus(oGpsInfo.weight,oGpsInfo.status)
+        });
+
+        var cHtml =
+            '<div class="ex-maptip-wtm"> ' +
+            '   <div class="ex-maptip-wtm-content">' +
+            '       <div class="ex-content-info-box">' +
+            '            <div class="ex-content-info-car ec-u-sm-6">' +
+            '               <h3>{vehNo}</h3>' +
+            '               <div class="ex-content-img"><img src="{img}" alt="{img}" /></div>' +
+            '               <ul>' +
+            '                   <li><i class="ec-icon-car"></i><span>{entName}</span></li>' +
+            //'                   <li><i class="ec-icon-user"></i><span>{CompanyName}</span></li>' +
+            //'                   <li><i class="ec-icon-map-signs"></i><span>{sWeightValue}</span></li>' +
+            '               </ul>' +
+            '           </div>' +
+            '           <div class="ex-content-info-state ec-u-sm-6">' +
+            '               <ul>' +
+            '                   <li><span>{cGpsDate}{cMsg}</span></li>' +
+            '                   <li><strong>状态：</strong><span>{cVehicleStatus}</span></li>' +
+            '                   <li><strong>速度：</strong><span>{speed} (Km/h)</span></li>' +
+            // '                   <li><strong>载重：</strong><span>{weight}</span></li>' +
+            //'                 <li><strong>今日：</strong><span></span></li>' +
+            '                   <li><strong>里程：</strong><span>{Mileage} Km</span></li>' +
+            '                   <li><strong>位置：</strong><span>{cPoiInfo}</span></li>' +
+            '               </ul>' +
+            '           </div>' +
+            '       </div>' +
+            '   </div>' +
+            '   <div class="ex-maptip-wtm-tool">' +
+            '       <ul class="tool-btn ec-avg-sm-3 ec-u-sm-6">' +
+            //'           <li><a href="javascript:void(0)" class="ec-btn ec-radius ec-icon-truck"> 详情 </a></li>' +
+            //'           <li><a href="javascript:void(0)" class="ec-btn ec-radius ec-icon-exchange"> 轨迹 </a></li>' +
+            '        </ul>' +
+            '       <ul class="tool-state ec-avg-sm-4 ec-u-sm-6">' +
+            '           <li><i class="GPS {map}"></i></li>' +
+            //'           <li><i class="ACC {key}"></i></li>' +
+            '           <li><i class="signal {signal}"></i></li>' +
+            //'           <li><i class="door {open}"></i></li>' +
+            '        </ul>' +
+            '   </div>' +
+            '</div>';
+
+        var cHtml = ES.Util.template(cHtml, oTemp);
+        return cHtml;
+    },
+
+    //判断载重
+    weightStatus:function(n,Status) {
+        if (!n) {
+            n = 0
+        }
+        var _weight = parseInt(n);
+
+        if (_weight <= 1) {
+            return "空载";
+        } else {
+            if ($.inArray(15, Status) >= 0) {
+                return "超载";
+            } else {
+                return "满载";
+            }
+        }
+    },
+    // 初始化监听事件
+    _initOn: function () {
+
+        // this._oMap.on("moveend", this._mapMoveHandler, this);
+        //
+        // // 画实时点
+        // this._oParent.on("MV:Real.drawLiveTrack", this.drawLiveTrack, this);
+        //
+        // // 判断是否显示弹出层
+        // this._oParent.on("MV:Real.showVecMarkerPop", this._showVecMarkerPop, this);
+        //
+        // // 放大实时监控点
+        // this._oParent.on("MV:Real.setLiveZoomIn", this.setLiveZoomIn, this);
+        //
+        // // 清除实时跟踪的点、历史点、轨迹线
+        // this._oParent.on("MV:Real.clearLiveTrack", this.clearLiveTrack, this);
+        //
+        // this._oParent.on("MapView:MapLive.setZoomIn", this.setZoomIn, this);
+
+    },
+
+    // 在地图上绘制实时跟踪的点
+    _drawLive: function () {
+
+        if (!this._oLivePosGroup) {
+            return;
+        }
+        var oGpsInfo = this.oGpsInfo;
+        var oLayer = this.findLayer(this._oLivePosGroup, oGpsInfo.devNo);
+        var oLatLng = oGpsInfo.latLng;
+        var cHtml = this._getVecMarkerHtml(oGpsInfo);
+        if (!oLayer) {
+            this.clearLiveTrack();
+            oLayer = this._createLive(oGpsInfo);
+            oLayer.addTo(this._oLivePosGroup);
+            //当弹出层弹出时，界面初始化公司信息，注册按钮事件
+            oLayer.bindPopup(cHtml, this.oPopOption);
+            this.oLayer = oLayer;
+        }
+        else {
+            oLayer.setLatLng(oLatLng);
+            //更新弹出层的信息
+            this._updateVecMarkerPop(oLayer, cHtml);
+        }
+        this._oMap.panTo(oLatLng);
+        oLayer._bringToFront();
+        this._setHeading(oGpsInfo, 180);
+        return oLayer;
+    },
+
+    //画布,实时跟踪绘制，如线，轨迹点等，oPosInfo，为当前点信息
+    _drawLiveHis: function ( ) {
+        var oGpsInfo = this.oGpsInfo;
+        var oPrePosInfo = null;
+        var oLineLayer = this.findLayer(this._oLineGroup, oGpsInfo.devNo);
+        if (!oLineLayer) {
+            //创建线图层
+            var oPloyLine = L.polyline([oGpsInfo.latLng], ES.MapView.oConfig.oLiveLineConfig);
+            oPloyLine.cId = oGpsInfo.devNo;
+            oPloyLine.oPrePosInfo = oGpsInfo;
+            oPloyLine.addTo(this._oLineGroup);
+        }
+        else {
+            oPrePosInfo = oLineLayer.oPrePosInfo;
+            oLineLayer.oPrePosInfo = oGpsInfo;
+            oLineLayer.addLatLng(oGpsInfo.latLng);
+        }
+
+        //创建轨迹图层
+        if (oPrePosInfo) {
+            var oTrackLayer = L.circleMarker(oPrePosInfo.latLng, ES.MapView.oConfig.oLiveCircleMarkerConfig);
+            var cHTML = this._getVecMarkerHtml(oPrePosInfo);
+            oTrackLayer.bindPopup(cHTML, this.oPopOption);
+            oTrackLayer.oGpsInfo = oPrePosInfo;
+            var oPopup = oTrackLayer.getPopup();
+            oPopup.oGpsInfo = oPrePosInfo;
+            this.initPopup(oTrackLayer);
+            // 设置对象的弹出层
+            //this.initPopupEvent(oTrackLayer);
+
+            oTrackLayer.addTo(this._oTrackGroup);
+        }
+    },
+
+    initPopup:function(oLayer){
+
+        var cHtml = this._getVecMarkerHtml(oLayer.oGpsInfo);
+        //更新弹出层的信息,修改的目的是防止注册2次点击事件
+        var oPopup = oLayer.getPopup();
+        if(!oPopup){
+            oPopup = oLayer.bindPopup(cHtml, this.oPopOption).getPopup();
+        }
+        // 在次注册事件
+        oPopup.oGpsInfo = oLayer.oGpsInfo;
+        oPopup.setContent(cHtml);
+
+        oLayer.oGpsInfo.bOpenBubble ? oLayer.openPopup() : oLayer.closePopup();
+        return oPopup;
+    },
+
+
+});

@@ -1,0 +1,40 @@
+/**
+ * Created by liulin on 2017/8/31.
+ */
+
+ES.Muck.RoleLayout= ES.Muck.BaseLayout.extend({
+
+    // cHTML:
+    // '<div class="ex-layout-content">' +
+    // '   <form data-reactroot="" class="ec-form ec-form-horizontal ex-layout-form-search ex-theme-form-search" id="formId" action="" target="MainFrame">' +
+    // '       <ul class="ec-avg-sm-4">' +
+    // '           <li class="ec-form-group">' +
+    // '               <label for="form-sitename" class="ec-u-sm-4 ec-form-label">角色名称：</label>' +
+    // '               <div class="ec-u-sm-8"><input type="text" name="form-sitename" id="txt_name" placeholder="角色名称" class="ec-form-field ec-radius ec-input-sm">' +
+    // '               </div>' +
+    // '           </li>' +
+    // '           <li class="ec-form-group">' +
+    // '               <div class="ec-u-sm-12 ex-final-button">' +
+    // '                   <button type= "button"  class="ec-btn ec-btn-sm ec-radius ec-btn-primary"  ><i class="ec-icon-search"></i> 查询 </button>' +
+    // '                   <button  type= "button" class="ec-btn ec-btn-sm ec-btn-succes ec-radius"  ><i class="ec-icon-plus"></i> 新增 </button>' +
+    // '               </div>' +
+    // '           </li>' +
+    // '       </ul>' +
+    // '       <button type="button" class="ec-btn ec-btn-sm ec-btn-default ex-btn-charts"><i class="ec-icon-area-chart"></i> 图表</button>' +
+    // '   </form>' +
+    // '   <table id="dtGridContainer" class="dt-grid-container"></table>' +
+    // '   <div id="dtGridToolBarContainer" class="dt-grid-toolbar-container" style="display:inline-block; line-height:2.2;"></div>' +
+    // '   <div class="ex-layout-charts-content flow">' +
+    // '       <a href="javascript:void(0);" class="ec-close ec-close-alt ec-close-spin ec-icon-times"></a>' +
+    // '       <div id="simpleChart" class="ex-layout-charts-content-box"></div>' +
+    // '   </div>' +
+    // '   <div style="clear:both;"></div>' +
+    // '</div>',
+
+    initUI: function () {
+        this.$_oContainer = $('.ex-layout-content');
+
+        $(this.oOption.cPContainer).append(this.$_oContainer);
+
+    }
+})

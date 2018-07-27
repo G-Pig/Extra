@@ -1,0 +1,329 @@
+/**
+ * Created by YangHang on 2017/12/4
+ */
+
+ES.CloudMap.Panel = ES.Evented.extend({
+    oOption: {
+        // 外层容器
+        cDivContainer: '.tree-layout-map',
+        CompanyId:"",
+        PermitId:"",
+        cTitle:'组织架构',
+        eTitle:"编辑",
+        cTempTitle:'临时处置证办理',
+        eTempTitle:'临时处置证编辑',
+        nWidth:280,
+        saveURL:'/RemovalPermit/AddFormal',
+        editURL:'/RemovalPermit/Edit',
+        tempSaveURL:'/RemovalPermit/AddTemp',
+        save:{
+            CompanyId: null,
+            SiteId: null,
+            UnloadId: null,
+            DayStart: null,
+            DayEnd: null,
+            MapY: "",
+            MapX: "",
+            GpsX: "",
+            GpsY: "",
+            Map: {
+                "nType": 0,
+                "oOption": null
+            },
+            Points: [],
+            Vehicles: []
+        },
+        HisData:{}
+    },
+    initialize: function (oParent, oOption) {
+        this._oParent = oParent;
+        ES.setOptions(this,oOption);
+        this.oOption.CompanyId = this.GetQueryString('CompanyId');
+        this.oOption.Edit = this.GetQueryString('edit');
+        this.oOption.Temp = this.GetQueryString('Temp');
+        this.oOption.PermitId = this.oOption.Edit == "true"?this.GetQueryString('PermitId'):this.oOption.PermitId;
+
+        if (typeof this.oOption.cDivContainer === 'object') {
+            this.$_oPContainer = this.oOption.cDivContainer;
+        }
+        else {
+            this.$_oPContainer = $(this.oOption.cDivContainer);
+        }
+
+        if(this.oOption.Edit=='true'){
+            ES.getData({id:this.oOption.PermitId},'/RemovalPermit/Get',this.EditInfo,this)
+        }else{
+            this.initUI();
+            this.initOn();
+        }
+
+
+        this.$_oContainer = null;
+    },
+    initUI: function () {
+        if(this.oOption.Temp !=='true'){
+            var _title = this.oOption.Edit=='true'?this.oOption.eTitle:this.oOption.cTitle
+        }else{
+            var _title = this.oOption.Edit=='true'?this.oOption.eTempTitle:this.oOption.cTempTitle
+        }
+
+        var oTemp = $(ES.template(this.cHtml, {cTitle: _title})).addClass(this.oOption.cFlag);
+
+        this.$_oPContainer.append(oTemp);
+        oTemp.find('div.ex-layout-sider').width(this.oOption.nWidth);
+        this.$_oContainer = oTemp;
+        this.$_oContainer.show();
+        this.initPanel();
+
+        this.setParentEvent();
+    },
+    initOn: function () {
+        var self = this;
+        $('#savePermit').bind('click',function(){
+            self.oOption.Temp!=="true"?self.save():self.tempSave();
+        })
+    },
+    // 设置父级容器的事件
+    setParentEvent: function () {
+
+        ////屏蔽事件
+        L.DomEvent.addListener(this.$_oContainer.get(0), 'click', L.DomEvent.stopPropagation);
+        L.DomEvent.addListener(this.$_oContainer.get(0), 'dblclick', L.DomEvent.stopPropagation);
+        L.DomEvent.addListener(this.$_oContainer.get(0), 'mousemove', L.DomEvent.stopPropagation);
+        L.DomEvent.addListener(this.$_oContainer.get(0), 'mousewheel', L.DomEvent.stopPropagation);
+
+        L.DomEvent.addListener(this.$_oContainer.get(0), 'touchmove', L.DomEvent.stopPropagation);
+
+    },
+    GetQueryString:function(name) {
+        var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+        var r = window.location.search.substr(1).match(reg);
+        if(r!=null)return  unescape(r[2]); return null;
+    },
+    save:function(){
+        var oParam = this.oOption.save;
+        //企业id
+        oParam.CompanyId = this.oOption.CompanyId;
+        oParam.Id = this.oOption.PermitId;
+        //时间设置
+        oParam.DayStart=$('#form-dateStart').val();
+        oParam.DayEnd=$('#form-dateEnd').val();
+        //线路坐标数组设置
+        this.oLine.saveEdit();
+        oParam.Points = this.oLine.PointGroup;
+        oParam.Map.aoLatLng = this.oLine.oLineParam.aoLatLng;
+        var order = 0;
+        $.each(oParam.Map.aoLatLng,function(i,v){
+            if(v.alt == 10086){
+                oParam.Points[order].Order = i;
+                order++;
+            }
+        });
+        oParam.MapY = oParam.MapX = oParam.GpsX = oParam.GpsY = "";
+        if(oParam.Map.aoLatLng!==undefined){
+            for(var i=0;i<oParam.Map.aoLatLng.length;i++){
+                oParam.MapY += oParam.Map.aoLatLng[i].lat +",";
+                oParam.MapX += oParam.Map.aoLatLng[i].lng +",";
+                oParam.GpsX += oParam.Map.aoLatLng[i].lat +",";
+                oParam.GpsY += oParam.Map.aoLatLng[i].lng +",";
+            }
+        }
+
+        if($('.ex-permit-step .ex-permit-step-cover').length == 0){
+            ES.aWarn('请点击生成线路按钮生成地图线路！');
+            return ;
+        }else if(this.oOption.save.SiteId == null||this.oOption.save.DayStart == ""||this.oOption.save.DayEnd == ""||this.oOption.save.MapX == null){
+                ES.aWarn('请正确填写必填（*）项目');
+                return ;
+        }else if(this.oOption.save.Vehicles.length == 0){
+            ES.aWarn('请绑定车辆');
+            return ;
+        }
+
+        var _URL = this.oOption.Edit=='true'?this.oOption.editURL:this.oOption.saveURL;
+        ES.getData(JSON.stringify(oParam),_URL,this.saveHandler,this,null,{contentType: 'application/json'});
+
+    },
+    saveHandler:function(oData){
+        var self = this;
+        if (oData && oData.IsSuccess) {
+            ES.aSucess('正式处置证办理成功！即将3秒钟后将关闭页面');
+            setTimeout(function(){
+                //window.top.oWebFrame.fire('TabPanel.removePage', {cId:parseInt(self.oOption.CompanyId)});
+                var items =  window.top.oWebFrame.oFooter.$_oFooter.find('em.remove'),parentId;
+                for(var i = 0;i<items.length;i++){
+                    if(items.eq(i).parent()[0].cId == parseInt(self.oOption.CompanyId) ){
+                        items.eq(i).click();
+                    }
+                    if(items.eq(i).siblings().html() == "处置证管理"){
+                        parentId = items.eq(i).parent()[0].cId;
+                        window.top.document.getElementById(parentId).contentWindow.location.reload(true);
+                    }
+                }
+
+
+            },3000)
+        }
+        else {
+            ES.aErr('办理出错：'+oData.Message);
+        }
+    },
+    tempSave:function(){
+        var oParam = this.oOption.save;
+        oParam.CompanyId = this.oOption.CompanyId;//企业id
+        oParam.Id = this.oOption.PermitId;//处置证id
+        //时间设置
+        oParam.DayStart=$('#form-dateStart').val();
+        oParam.DayEnd=$('#form-dateEnd').val();
+
+        //线路坐标数组设置
+        // this.oLine.saveEdit();
+        // oParam.Points = this.oLine.PointGroup;
+        // oParam.Map.aoLatLng = this.oLine.oLineParam.aoLatLng;
+        // var order = 0;
+        // $.each(oParam.Map.aoLatLng,function(i,v){
+        //     if(v.alt == 10086){
+        //         oParam.Points[order].Order = i;
+        //         order++;
+        //     }
+        // });
+        // oParam.MapY = oParam.MapX = oParam.GpsX = oParam.GpsY = "";
+        // if(oParam.Map.aoLatLng!==undefined){
+        //     for(var i=0;i<oParam.Map.aoLatLng.length;i++){
+        //         oParam.MapY += oParam.Map.aoLatLng[i].lat +",";
+        //         oParam.MapX += oParam.Map.aoLatLng[i].lng +",";
+        //         oParam.GpsX += oParam.Map.aoLatLng[i].lat +",";
+        //         oParam.GpsY += oParam.Map.aoLatLng[i].lng +",";
+        //     }
+        // }
+        //
+        //
+        // if(this.oOption.HisData.MapX !== ""&&this.oOption.HisData.MapX !== undefined){
+        //     if($('.ex-permit-step .ex-permit-step-cover').length == 0){
+        //         ES.aWarn('请点击生成线路按钮生成地图线路！');
+        //         return ;
+        //     }
+        // }
+        if(this.oOption.save.SiteId == null||this.oOption.save.DayStart == ""||this.oOption.save.DayEnd == ""){
+            ES.aWarn('请正确填写必填（*）项目');
+            return ;
+        }else if(this.oOption.save.Vehicles.length == 0){
+            ES.aWarn('请绑定车辆');
+            return ;
+        }
+
+        var _URL = this.oOption.Edit=='true'?this.oOption.editURL:this.oOption.tempSaveURL;
+        ES.getData(JSON.stringify(oParam),_URL,this.tempSaveHandler,this,null,{contentType: 'application/json'});
+
+    },
+    tempSaveHandler:function(oData){
+        var self = this;
+        if (oData && oData.IsSuccess) {
+            ES.aSucess('临时处置证办理成功！即将3秒钟后将关闭页面');
+            setTimeout(function(){
+                //window.top.oWebFrame.fire('TabPanel.removePage', {cId:parseInt(self.oOption.CompanyId)});
+                var items =  window.top.oWebFrame.oMenuFrame.oFooter.$_oFooter.find('em.remove'),parentId;
+                for(var i = 0;i<items.length;i++){
+                    if(items.eq(i).parent()[0].cId == parseInt(self.oOption.CompanyId) ){
+                        items.eq(i).click();
+                    }
+                    if(items.eq(i).siblings().html() == "处置证管理"){
+                        parentId = items.eq(i).parent()[0].cId;
+                        window.top.document.getElementById(parentId).contentWindow.location.reload(true);
+                    }
+                }
+
+            },3000)
+        }
+        else {
+            ES.aErr('办理出错：'+oData.Message);
+        }
+    },
+    EditInfo:function(oData){
+        this.oOption.HisData = oData;
+        this.initUI();
+        this.initOn();
+
+        if(this.oOption.Temp !== "true")this.oLine.cover();
+    },
+
+});
+
+// 注册查询事件 高度控制由外层来完成
+ES.CloudMap.Panel.include({
+
+    cHtml:
+    '<div class="ex-maptool-box ex-maptool-box-white ex-maptool-property ec-padding-0">' +
+    '   <div class="ex-layout-sider ex-theme-tree ec-fl"  >' +
+    '       <h3 class="ex-theme-sider-title">' +
+    '           <i class="ec-icon-sitemap"></i>&nbsp;{cTitle}' +
+    '       </h3>' +
+    '       <div class="ex-permit-step"></div>' +
+    '       <div class="ec-form-group ec-margin-bottom-0">' +
+    '           <a class="ec-btn ec-btn-success ec-block" id="savePermit" style="display:none"> 完成提交 </a>' +
+    '       </div>' +
+    '   </div>' +
+    '</div>',
+
+    // 初始化树
+    initPanel: function () {
+        //初始化五个模板
+        //初始化工地
+        this.oSite = new ES.CloudMap.Site(this,{
+            oTreeOption:{
+                core: {
+                    'animation': 0,
+                    'check_callback': true,
+
+                    'state': {'opened': true},
+                    'data': {
+                        'url': '/Site/Tree',
+                        'type': 'POST'
+                    }
+                },
+                checkbox:{
+                    tie_selection:false,
+                },
+
+                plugins: [ 'types', 'search','unique']
+            },
+        });
+
+        if(this.oOption.Temp !== "true"){
+            //初始化线路
+            this.oLine=new ES.CloudMap.Line(this,{});
+        }
+
+
+
+
+        if(this.oOption.Temp !== "true"){
+            //初始化消纳点
+            this.oUnload = new ES.CloudMap.Unload(this, {
+                oTreeOption: {
+                    core: {
+                        'animation': 0,
+                        'check_callback': true,
+
+                        'state': {'opened': true},
+                        'data': {
+                            'url': '/Unload/Tree',
+                            'type': 'POST'
+                        }
+                    },
+                    checkbox: {
+                        tie_selection: false,
+                    },
+
+                    plugins: ['types', 'search', 'unique']
+                },
+            });
+        }
+        //初始化消纳点
+        this.oBaseInfo=new ES.CloudMap.BaseInfo(this,{});
+
+        //初始化消纳点
+        this.oVehicle=new ES.CloudMap.Vehicle(this,{});
+    },
+
+});

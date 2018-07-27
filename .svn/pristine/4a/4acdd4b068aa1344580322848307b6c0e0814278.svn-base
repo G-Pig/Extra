@@ -1,0 +1,20 @@
+//弹出层的详情—只有一个表格
+ES.Muck.ModelGrid = ES.Common.BaseJqGrid.extend({
+
+    setColumns: function () {
+        var list = [
+            { label: '车牌号', name: 'VehicleNo', editable: true, align: 'center', sortable: false },
+            { label: '所属企业', name: 'ResourceTypeName', editable: true, align: 'center', width: 180, sortable: false },
+            { label: '在线状态', name: 'Online', editable: true, align: 'center', sortable: false },
+        ];
+
+        this.aoCol = list;
+    },
+
+    initClick: function (e, oModel) {
+
+    },
+    resizeBody: function () {
+
+    },
+});

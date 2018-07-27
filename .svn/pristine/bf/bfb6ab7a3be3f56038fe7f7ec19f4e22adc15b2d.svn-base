@@ -1,0 +1,978 @@
+/**
+ * Created by YangHang on 2017/12/12.
+ */
+
+
+
+ES.MapBase.Site = ES.MapBase.extend({
+
+    //执行画点，画线操作
+    oOption: {
+        site:6,//工地
+        SuspSite:18,//可疑工地
+        StateCp:9,//国控点
+        Bayonet:5//卡口
+    },
+
+    initialize: function (oParent, oOption) {
+        ES.MapBase.prototype.initialize.call(this, oParent, oOption);
+        this.aoStatusData = {};
+        // 执行自己的方法
+        this._initGroup();
+        this._loadOn();
+    },
+
+    // 初始化Group
+    _initGroup: function () {
+
+        //正式工地中心点图层
+        this._oSiteGroup = L.layerGroup();
+        this._oMap.addLayer(this._oSiteGroup);
+        //正式工地图层
+        this._oPolygonSiteGroup = L.layerGroup();
+        this._oMap.addLayer(this._oPolygonSiteGroup);
+
+        //国控点图层
+        this._oStateCpGroup = L.layerGroup();
+        this._oMap.addLayer(this._oStateCpGroup);
+        //国控点多边形图层
+        this._oPolygonStateCpGroup = L.layerGroup();
+        this._oMap.addLayer(this._oPolygonStateCpGroup);
+
+        //可疑工地的点
+        this._oSuspSiteGroup = L.layerGroup();
+        this._oMap.addLayer(this._oSuspSiteGroup);
+
+        //卡口的点
+        this._oBayonetGroup = L.layerGroup();
+        this._oMap.addLayer(this._oBayonetGroup);
+        //卡口的多边形图层
+        this._oPolygonBayonetGroup = L.layerGroup();
+        this._oMap.addLayer(this._oPolygonBayonetGroup);
+
+
+        this.aoSiteInfo = null;
+    },
+
+    //初始化时加载数据
+    _loadOn: function () {
+
+        //给界面赋值
+        this._oParent.on("MV:Site.setStatusData", this.setStatusData, this);
+        this._oParent.on("MV:Site.setStatusSuspSiteData", this.setStatusSuspSiteData, this);
+
+        //设置正常工地的值
+        this._oParent.on("MV:Site.setSiteData", this.setSiteData, this);
+        //设置单点工地
+        this._oParent.on("MV:Site.setOnlySiteData", this.setOnlySiteData, this);
+        //设置国控点赋值
+        this._oParent.on("MV:Site.setStateCpData", this.setStateCpData, this);
+        this._oParent.on("MV:Site.hideStateCpData", this.hideStateCpData, this);
+        //设置可疑工地赋值
+        this._oParent.on("MV:Site.setSuspSiteData", this.setSuspSiteData, this);
+        this._oParent.on("MV:Site.hideSuspSiteData", this.hideSuspSiteData, this);
+        //设置卡口赋值
+        this._oParent.on("MV:Site.setBayonetData", this.setBayonetData, this);
+        this._oParent.on("MV:Site.hideBayonetData", this.hideBayonetData, this);
+
+        //监听地图放大缩小时间
+        this._oMap.on("zoomend", this.drawZoomendSites, this);
+        this._oParent.on("MV:Site.clearAll", this.clearAll, this);
+        this._oParent.on("MV:Site.clearSites", this.clearSites, this);
+    },
+
+    //保存节点状态数据
+    setStatusData: function (oData) {
+        this.aoStatusData[9] = oData.aoStatusData[9];
+        this.aoStatusData[5] = oData.aoStatusData[5];
+        if(this.oOption.site==8){
+            this.aoStatusData[8] = oData.aoStatusData[8];
+        }else if(this.oOption.site==6){
+            this.aoStatusData[6] = oData.aoStatusData[6];
+        }
+
+        //6 正常工地
+        var sites = this.aoStatusData[this.oOption.site];
+        if(sites.length == 0){this._oParent.fire("MV:Site.setSiteData", {aoSiteInfo:sites});}else{
+            if(!sites[0].CenterPoint){
+                this._oParent.fire("MV:Site.setOnlySiteData", {aoSiteInfo:sites});
+            }else{
+                this._oParent.fire("MV:Site.setSiteData", {aoSiteInfo:sites});
+            }
+        }
+
+
+
+        if($.inArray(this.oOption.StateCp, this._oParent.LayersPanel.oOption.checkStatus) >= 0){
+            //9 国控点
+            var stateCp  = this.aoStatusData[this.oOption.StateCp];
+            if($.inArray(this.oOption.StateCp, this._oParent.LayersPanel.oOption.checkStatusNow) >= 0){
+                if(stateCp.length !==0)this._oParent.fire("MV:Site.setStateCpData", {aoStateCpInfo:stateCp});
+            }
+
+        }
+        if($.inArray(this.oOption.Bayonet, this._oParent.LayersPanel.oOption.checkStatus) >= 0){
+            //5 卡口
+            var bayonet  = this.aoStatusData[this.oOption.Bayonet];
+            if($.inArray(this.oOption.Bayonet, this._oParent.LayersPanel.oOption.checkStatusNow) >= 0){
+                if(bayonet.length !==0)this._oParent.fire("MV:Site.setBayonetData", {aoStateCpInfo:bayonet});
+            }
+
+        }
+
+
+
+    },
+    //保存可疑工地节点数据  类型18
+    setStatusSuspSiteData:function(oData){
+        this.aoStatusData[this.oOption.SuspSite] =oData.aoStatusData;
+        if($.inArray(this.oOption.SuspSite, this._oParent.LayersPanel.oOption.checkStatus) >= 0){
+            //18 可疑工地
+            var SuspSite =  this.aoStatusData[this.oOption.SuspSite];
+            if($.inArray(this.oOption.SuspSite, this._oParent.LayersPanel.oOption.checkStatusNow) >= 0){
+                if(SuspSite.length !==0)this._oParent.fire("MV:Site.setSuspSiteData", {aoStateCpInfo:SuspSite});
+            }
+
+        }
+
+     },
+
+    //设置数据时才进行操作 类型：6
+    setSiteData: function (oData) {
+        this._oSiteGroup.clearLayers();
+        this._oPolygonSiteGroup.clearLayers();
+
+        this.aoSiteInfo = this.aoSiteTemp = oData.aoSiteInfo;
+        this.aoSiteInfoType = this.oOption.site;
+        this.drawSites(1,this.oOption.site);
+    },
+    //设置单点工地
+    setOnlySiteData:function(oData){
+        var oPosInfo = oData.aoSiteInfo[0];
+
+        oPosInfo.aoLatLag = this._getLatLng(oPosInfo.MapX,oPosInfo.MapY)
+        var oBound = new L.LatLngBounds(oPosInfo.aoLatLag);
+        var point = oBound.getCenter();
+        oPosInfo.CenterPoint = {Lat:point.lat,Lon:point.lng};
+        oPosInfo.only = true;
+        oPosInfo.CloudName = oPosInfo.Name;
+        //this._oMap.fitBounds(point);
+
+
+        this.aoSiteInfo = this.aoSiteTemp = oData.aoSiteInfo;
+        this.aoSiteInfoType = this.oOption.site;
+        this.drawSites(1,this.oOption.site);
+    },
+    //设置国控点时才进行操作 类型：9
+    setStateCpData: function (oData) {
+        var self =this;
+        this._oStateCpGroup.clearLayers();
+        this._oPolygonStateCpGroup.clearLayers();
+
+        //获取国控点PM数据
+        ES.getData({},'/CloudMap/GetAirQualityData',function(oData){
+            self.Environment = oData;
+            var StatusData = self.aoStatusData[self.oOption.StateCp];
+            for(var i=0;i<StatusData.length;i++) {
+                var _Environment = oData.filter(function (item) {
+                    return item.sstation === StatusData[i].CloudName;
+                });
+                StatusData[i].Environment = _Environment[0];
+
+            }
+            self.aoStatusInfo = self.aoSiteTemp = self.aoStatusData[self.oOption.StateCp];
+            self.aoStatusInfoType = self.oOption.StateCp;
+            self.drawSites(1,self.oOption.StateCp);
+        })
+
+
+
+    },
+    //设置可疑工地才进行的操作 类型18
+    setSuspSiteData: function (oData) {
+        this._oSuspSiteGroup.clearLayers();
+
+        this.aoSuspSiteInfo = this.aoSiteTemp = this.aoStatusData[this.oOption.SuspSite];
+        this.aoSuspSiteInfoType = this.oOption.SuspSite;
+        this.drawSites(1,this.oOption.SuspSite);
+    },
+    //设置卡口才进行的操作 类型5
+    setBayonetData:function(oData){
+        this._oBayonetGroup.clearLayers();
+
+        this.aoBayonetInfo = this.aoSiteTemp = this.aoStatusData[this.oOption.Bayonet];
+        this.aoBayonetInfoType = this.oOption.Bayonet;
+        this.drawSites(1,this.oOption.Bayonet);
+    },
+    //勾选隐藏 卡口
+    hideBayonetData:function(){
+        this._oBayonetGroup.clearLayers();
+        this._oPolygonBayonetGroup.clearLayers();
+    },
+    //勾选隐藏 国控点
+    hideStateCpData:function(){
+        this._oStateCpGroup.clearLayers();
+        this._oPolygonStateCpGroup.clearLayers();
+    },
+    //勾选隐藏 可疑工地
+    hideSuspSiteData:function(){
+        this._oSuspSiteGroup.clearLayers();
+    },
+    //清除所有
+    clearAll:function(){
+        //工地
+        this._oSiteGroup.clearLayers();
+        this._oPolygonSiteGroup.clearLayers();
+        //国控点
+        this._oStateCpGroup.clearLayers();
+        this._oPolygonStateCpGroup.clearLayers();
+        //可疑工地
+        this._oSuspSiteGroup.clearLayers();
+        //卡口
+        this._oBayonetGroup.clearLayers();
+        this._oPolygonBayonetGroup.clearLayers();
+    },
+    // 画所有工地，数据保护所有工地,存在相同的工地和消纳点就不用画
+    drawSites: function (nKey,type) {
+        if (nKey === 1) {
+            nKey = 0;
+        }
+        else {
+            nKey = 10;
+        }
+        var aoSiteTemp = this.aoSiteTemp;
+        if (!aoSiteTemp) return;
+
+        //获得当前图层层级，如果是1-5层
+        var nZoom = this._oMap.getZoom();
+        var k = -1;
+
+
+
+        if (nZoom <= 7) {
+            this._oSiteGroup.clearLayers();
+            this._oPolygonSiteGroup.clearLayers();
+
+            //国控点清理
+            this._oStateCpGroup.clearLayers();
+            this._oPolygonStateCpGroup.clearLayers();
+
+            //可疑工地清理
+            this._oSuspSiteGroup.clearLayers();
+        }
+        else if (nZoom > 7 && nZoom <= 14) {
+            this._oPolygonSiteGroup.clearLayers();
+            this._oPolygonStateCpGroup.clearLayers();
+            if (aoSiteTemp.length == 1) {
+                k = 0 || nKey;
+            }
+            for(var i = 0;i<aoSiteTemp.length;i++){ this._drawSiteMarker(aoSiteTemp[i], k,type);}
+        }
+        else {
+            if(type !== this.oOption.SuspSite){
+                this._oSiteGroup.clearLayers();
+                this._oStateCpGroup.clearLayers();
+                if (aoSiteTemp.length == 1) {
+                    k = 0 || nKey;
+                }
+                for(var i = 0;i<aoSiteTemp.length;i++){ this._drawPolygonSite(aoSiteTemp[i], k,type);}
+            }else{
+                if (aoSiteTemp.length == 1) {
+                    k = 0 || nKey;
+                }
+                for(var i = 0;i<aoSiteTemp.length;i++){ this._drawSiteMarker(aoSiteTemp[i], k,type);}
+            }
+        }
+
+
+    },
+    drawZoomendSites:function(nKey){
+        if (nKey === 1) {
+            nKey = 0;
+        }
+        else {
+            nKey = 10;
+        }
+        var aoSiteInfo = this.aoSiteInfo;
+        var aoStatusInfo = this.aoStatusInfo;
+        var aoSuspSiteInfo = this.aoSuspSiteInfo;
+        var aoBayonetInfo = this.aoBayonetInfo;
+        if (!aoSiteInfo) return;
+        if (!aoStatusInfo||$.inArray(this.oOption.StateCp, this._oParent.LayersPanel.oOption.checkStatusNow) < 0) aoStatusInfo=[];
+        if (!aoSuspSiteInfo||$.inArray(this.oOption.SuspSite, this._oParent.LayersPanel.oOption.checkStatusNow) < 0)aoSuspSiteInfo=[];
+        if (!aoBayonetInfo||$.inArray(this.oOption.Bayonet, this._oParent.LayersPanel.oOption.checkStatusNow) < 0)aoBayonetInfo=[];
+
+        //获得当前图层层级，如果是1-5层
+        var nZoom = this._oMap.getZoom();
+        var k = -1;
+
+
+
+        if (nZoom <= 7) {
+            this._oSiteGroup.clearLayers();
+            this._oPolygonSiteGroup.clearLayers();
+
+            //国控点清理
+            this._oStateCpGroup.clearLayers();
+            this._oPolygonStateCpGroup.clearLayers();
+
+            //可疑工地清理
+            this._oSuspSiteGroup.clearLayers();
+            //卡点清理
+            this._oBayonetGroup.clearLayers();
+            this._oPolygonBayonetGroup.clearLayers();
+        }
+        else if (nZoom > 7 && nZoom <= 14) {
+            this._oPolygonSiteGroup.clearLayers();
+            this._oPolygonStateCpGroup.clearLayers();
+            this._oPolygonBayonetGroup.clearLayers();
+            if (aoSiteInfo.length == 1) {
+                k = 0 || nKey;
+            }
+            for(var i = 0;i<aoSiteInfo.length;i++){ this._drawSiteMarker(aoSiteInfo[i], k,this.aoSiteInfoType);}
+            for(var j = 0;j<aoStatusInfo.length;j++){ this._drawSiteMarker(aoStatusInfo[j], k,this.aoStatusInfoType);}
+            for(var l = 0;l<aoSuspSiteInfo.length;l++){ this._drawSiteMarker(aoSuspSiteInfo[l], k,this.aoSuspSiteInfoType);}
+            for(var b = 0;b<aoBayonetInfo.length;b++){ this._drawSiteMarker(aoBayonetInfo[b], k,this.aoBayonetInfoType);}
+        }
+        else {
+            this._oSiteGroup.clearLayers();
+            this._oStateCpGroup.clearLayers();
+            this._oBayonetGroup.clearLayers();
+            if (aoSiteInfo.length == 1) {
+                k = 0 || nKey;
+            }
+            for(var i = 0;i<aoSiteInfo.length;i++){ this._drawPolygonSite(aoSiteInfo[i], k,this.aoSiteInfoType);}
+            for(var j = 0;j<aoStatusInfo.length;j++){ this._drawPolygonSite(aoStatusInfo[j], k,this.aoStatusInfoType);}
+            for(var b = 0;b<aoBayonetInfo.length;b++){ this._drawPolygonSite(aoBayonetInfo[b], k,this.aoBayonetInfoType);}
+        }
+
+
+    },
+
+    //画单个点
+    _drawSiteMarker: function (oPosInfo, nIndex,type) {
+        if (!oPosInfo.CenterPoint&&type!==this.oOption.SuspSite){
+                return;
+        } else{
+            var oLatLng =type == this.oOption.SuspSite?{lat:oPosInfo.Lat,lng:oPosInfo.Lng}:{lat:oPosInfo.CenterPoint.Lat,lng:oPosInfo.CenterPoint.Lon} ;
+        }
+
+
+        switch(type){
+            case this.oOption.site:
+                if (!this._oSiteGroup) return;
+                var oLayer = this.findLayer(this._oSiteGroup, oPosInfo.Id);
+                if (oLayer) return oLayer;
+                var cHtml = this._getPopHtml(oPosInfo,type);
+                var oIcon = this._getIcon(oPosInfo,type);
+                var oMarker = L.marker(oLatLng, { icon: oIcon });
+                oMarker.bindPopup(cHtml);
+                oMarker.addTo(this._oSiteGroup);
+                oMarker.cId = oPosInfo.Id;
+                oMarker.oPosInfo = oPosInfo;
+                break;
+            case this.oOption.StateCp:
+                if(!this._oStateCpGroup)return;
+                var oLayer = this.findLayer(this._oStateCpGroup, oPosInfo.Id);
+                if (oLayer) return oLayer;
+                var cHtml = this._getPopHtml(oPosInfo,type);
+                var oIcon = this._getIcon(oPosInfo,type);
+                var oMarker = L.marker(oLatLng, { icon: oIcon });
+                oMarker.cId = oPosInfo.Id;
+                oMarker.oPosInfo = oPosInfo;
+                oMarker.bindPopup(cHtml);
+                oMarker.addTo(this._oStateCpGroup);
+                break;
+            case this.oOption.SuspSite:
+                if(!this._oSuspSiteGroup)return;
+                var oLayer = this.findLayer(this._oSuspSiteGroup, parseInt(oPosInfo.Lat*1000000));
+                if (oLayer) return oLayer;
+                //var cHtml = this._getPopHtml(oPosInfo,type);
+                var oIcon = this._getIcon(oPosInfo,type);
+                var oMarker = L.marker(oLatLng, { icon: oIcon });
+                oMarker.cId = parseInt(oPosInfo.Lat*1000000);
+                oMarker.oPosInfo = oPosInfo;
+                //oMarker.bindPopup(cHtml);
+                oMarker.addTo(this._oSuspSiteGroup);
+                break;
+            case this.oOption.Bayonet:
+                if(!this._oBayonetGroup)return;
+                var oLayer = this.findLayer(this._oBayonetGroup, oPosInfo.Id);
+                if (oLayer) return oLayer;
+                var cHtml = this._getPopHtml(oPosInfo,type);
+                var oIcon = this._getIcon(oPosInfo,type);
+                var oMarker = L.marker(oLatLng, { icon: oIcon });
+                oMarker.cId = oPosInfo.Id;
+                oMarker.oPosInfo = oPosInfo;
+                oMarker.bindPopup(cHtml);
+                oMarker.addTo(this._oBayonetGroup);
+                break;
+        }
+
+        return oMarker;
+    },
+
+    //画多边形
+    _drawPolygonSite: function (oPosInfo, nIndex,type) {
+        var oInfo = oPosInfo;
+        var oPolygon = null;
+        var oIcon = new L.DivIcon({
+            html: "<div><h4>"+oPosInfo.CloudName+"</h4></div>",
+            className: '',
+        });
+        // 中心点
+        var oLatLng = null;
+        switch(type){
+            case this.oOption.site:
+                if (!this._oPolygonSiteGroup) return;
+                var oTemp = this.findLayer(this._oPolygonSiteGroup, oPosInfo.Id);
+                if (oTemp) return;
+                var cHtml = this._getPopHtml(oPosInfo,type);
+                var oSiteConfig = {
+                    clickable:true,
+                    color:"#FF3300",
+                    fill:true,
+                    fillColor:"#0FFF05",
+                    fillOpacity:0.2,
+                    noClip:false,
+                    opacity:1,
+                    smoothFactor:1,
+                    stroke:true,
+                    weight: 3
+                };
+                oInfo.aoLatLag = this._getLatLng(oInfo.MapX,oInfo.MapY);
+                oPolygon = L.polygon(oInfo.aoLatLag, oSiteConfig).addTo(this._oPolygonSiteGroup);
+                var oBound = new L.LatLngBounds(oInfo.aoLatLag);
+                oLatLng = oBound.getCenter();
+                oPolygon.bindPopup(cHtml);
+                oPolygon.Id = oPosInfo.Id;
+                var oMarker = L.marker(oLatLng, { icon: oIcon, bIsNotEdit: true });
+                oMarker.addTo(this._oPolygonSiteGroup);
+                break;
+            case this.oOption.StateCp:
+                if (!this._oPolygonStateCpGroup) return;
+                var oTemp = this.findLayer(this._oPolygonStateCpGroup, oPosInfo.Id);
+                if (oTemp) return;
+                var cHtml = this._getPopHtml(oPosInfo,type);
+                oInfo.aoLatLag = this._getLatLng(oInfo.MapX,oInfo.MapY);
+                oPolygon = L.circle(oInfo.aoLatLag[0], 300, oInfo.oOption).addTo(this._oPolygonStateCpGroup);
+                oPolygon.bindPopup(cHtml);
+                oLatLng = oInfo.aoLatLag[0];
+                oPolygon.Id = oPosInfo.Id;
+                var oMarker = L.marker(oLatLng, { icon: oIcon, bIsNotEdit: true });
+                oMarker.addTo(this._oPolygonStateCpGroup);
+                break;
+            case this.oOption.Bayonet:
+                if (!this._oPolygonBayonetGroup) return;
+                var oTemp = this.findLayer(this._oPolygonBayonetGroup, oPosInfo.Id);
+                if (oTemp) return;
+                var cHtml = this._getPopHtml(oPosInfo,type);
+                var oSiteConfig = {
+                    clickable:true,
+                    color:"#FF3300",
+                    fill:true,
+                    fillColor:"#0FFF05",
+                    fillOpacity:0.2,
+                    noClip:false,
+                    opacity:1,
+                    smoothFactor:1,
+                    stroke:true,
+                    weight: 3
+                };
+                oInfo.aoLatLag = this._getLatLng(oInfo.MapX,oInfo.MapY);
+                oPolygon = L.polygon(oInfo.aoLatLag, oSiteConfig).addTo(this._oPolygonBayonetGroup);
+                var oBound = new L.LatLngBounds(oInfo.aoLatLag);
+                oLatLng = oBound.getCenter();
+                oPolygon.bindPopup(cHtml);
+                oPolygon.Id = oPosInfo.Id;
+                var oMarker = L.marker(oLatLng, { icon: oIcon, bIsNotEdit: true });
+                oMarker.addTo(this._oPolygonBayonetGroup);
+        }
+
+        if (nIndex == 0) {
+            this._oMap.panTo(oLatLng);
+
+        }
+        oPolygon.oMarker = oMarker;
+        return oPolygon;
+    },
+    //多边形坐标规范化
+    _getLatLng:function(mX,mY){
+        var _aolatlngs =[];
+        var MapX = mX.split(',');
+        var MapY = mY.split(',');
+
+        for(var i=0;i<MapX.length;i++){
+            var _latlng = {lat:MapY[i],lng:MapX[i]};
+            _aolatlngs.push(_latlng)
+        }
+
+        return _aolatlngs;
+    },
+
+    //绑定数据到列表中
+
+    //工地数据
+    _getBayonetIconHtml: function () {
+
+        var cHtml =
+        '<div class="ex-monitor-mapicon-grid">' +
+        '   <div class="pin-tip" style="display: none;">' +
+        '       <div class="pin-dome"><b></b><c></c><d></d></div>' +
+        '       <div class="pin-number">{Name}</div>' +
+        '   </div>' +
+        '   <div class="site-body">' +
+        '   </div>' +
+        '</div>';
+
+        return cHtml;
+    },
+    //国控点
+    _getCpIconHtml: function (oData) {
+        var Environment = oData.Environment;
+        if(Environment.aqtype == "优"){
+            var _color ="excellent" ;
+        }else if(Environment.aqtype == "良"){
+            var _color = "nice";
+        }else if(Environment.aqtype == "轻度"){
+            var _color ="light" ;
+        }else if(Environment.aqtype == "中度"){
+            var _color = "middle";
+        }else if(Environment.aqtype == "重度"){
+            var _color = "grave";
+        }else if(Environment.aqtype == "严重"){
+            var _color ="weighty";
+        }
+
+        var cHtml =
+            '<div class="ex-monitor-mapicon-environ '+ _color +'">' +
+            '   <div class="pin-tip" style="display: none;">' +
+            '       <div class="pin-dome"><b></b><c></c><d></d></div>' +
+            '       <div class="pin-number">{Name}</div>' +
+            '   </div>' +
+            '   <div class="site-body">' +
+            '   </div>' +
+            '</div>';
+
+        return cHtml;
+    },
+    //可疑工地
+    _getSuspSiteIconHtml: function () {
+
+        var cHtml =
+            '<div class="ex-monitor-mapicon-site hacked">' +
+            '   <div class="pin-tip" style="display: none;">' +
+            '       <div class="pin-dome"><b></b><c></c><d></d></div>' +
+            '       <div class="pin-number">{Name}</div>' +
+            '   </div>' +
+            '   <div class="site-body">' +
+            '   </div>' +
+            '</div>';
+
+        return cHtml;
+    },
+    //可以消纳点
+    _getSuspUnloadIconHtml:function(){
+        var cHtml =
+            '<div class=" ex-monitor-mapicon-unload hacked">' +
+            '   <div class="pin-tip" style="display: none;">' +
+            '       <div class="pin-dome"><b></b><c></c><d></d></div>' +
+            '       <div class="pin-number">{Name}</div>' +
+            '   </div>' +
+            '   <div class="site-body">' +
+            '   </div>' +
+            '</div>';
+
+        return cHtml;
+    },
+    //卡口icon
+    _getIconHtml:function(){
+        var cHtml =
+            '<div class="ex-monitor-mapicon-site now">' +
+            '   <div class="pin-tip" style="display: none;">' +
+            '       <div class="pin-dome"><b></b><c></c><d></d></div>' +
+            '       <div class="pin-number">{Name}</div>' +
+            '   </div>' +
+            '   <div class="site-body">' +
+            '   </div>' +
+            '</div>';
+
+        return cHtml;
+    },
+
+    //消纳点icon
+    _getUnloadIconHtml:function(){
+        var cHtml =
+            '<div class="ex-monitor-mapicon-unload normal">' +
+            '   <div class="pin-tip" style="display: none;">' +
+            '       <div class="pin-dome"><b></b><c></c><d></d></div>' +
+            '       <div class="pin-number">{Name}</div>' +
+            '   </div>' +
+            '   <div class="site-body">' +
+            '   </div>' +
+            '</div>';
+
+        return cHtml;
+    },
+    _getIcon: function (oData,type) {
+
+        var oItem = {Name:oData.CloudName}
+        switch (type){
+            case this.oOption.site:
+                var oIcon = L.divIcon({
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 20],
+                    popupAnchor: [-1, -20],
+                    className: "",
+                    html: ES.template(this.oOption.site == 6?this._getIconHtml():this._getUnloadIconHtml(), oItem),
+                });
+                break;
+            case this.oOption.StateCp:
+                var oIcon = L.divIcon({
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 20],
+                    popupAnchor: [-1, -20],
+                    className: "",
+                    html: ES.template(this._getCpIconHtml(oData), oItem),
+                });
+                break;
+            case this.oOption.SuspSite:
+                var oIcon = L.divIcon({
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 20],
+                    popupAnchor: [-1, -20],
+                    className: "",
+                    html: ES.template(this.oOption.site == 6?this._getSuspSiteIconHtml():this._getSuspUnloadIconHtml(), {Name:oData.PlaceInfo}),
+                });
+                break;
+            case this.oOption.Bayonet:
+                var oIcon = L.divIcon({
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 20],
+                    popupAnchor: [-1, -20],
+                    className: "",
+                    html: ES.template(this._getBayonetIconHtml(oData), oItem),
+                });
+                break;
+        }
+
+        return oIcon;
+    },
+
+    _getPopHtml: function (oPosInfo,type) {
+
+        switch (type){
+            case this.oOption.site:
+                if(this.oOption.site == 6){
+                    var cHtml = '<h4 ><b>工地:' + oPosInfo.CloudName + '</b></h4>'
+                }else{
+                    var cHtml = '<h4 ><b>消纳点:' + oPosInfo.CloudName + '</b></h4>'
+                };
+                break;
+            case this.oOption.StateCp:
+                var Environment = oPosInfo.Environment;
+                if(!Environment){
+                    var cHtml = '不存在该国控点，无法获取环保数据';
+                }else{
+                    var cHtml =
+                        '<div class="ex-maptip ex-maptip-list" style="display: block;    overflow: hidden;">' +
+                        '   <h3><font class="ec-align-left">'+ Environment.sstation +'空气质量</font><span class="ec-align-right ec-text-center">'+Environment.aqtype+'</span></h3>' +
+                        '   <hr class="clearfix">' +
+                        '   <ul class="ec-padding-0">' +
+                        '       <li><font class="ec-align-left">AQI(1小时空气平均质量指数)</font><span class="ec-align-right">'+Environment.aqi+'</span></li>' +
+                        '       <li><font class="ec-align-left">PM2.5</font><f class="ec-align-right">'+Environment.pm25onehouriaqi +'μg/m<sup>3</sup></f></li>' +
+                        '       <li><font class="ec-align-left">SO2</font><f class="ec-align-right">'+ Environment.so2onehour+'μg/m<sup>3</sup></f></li>' +
+                        '       <li><font class="ec-align-left">NO2</font><f class="ec-align-right">'+Environment.no2onehour+'μg/m<sup>3</sup></f></li>' +
+                        '       <li><font class="ec-align-left">O3</font><f class="ec-align-right">'+Environment.o3onehour+'μg/m<sup>3</sup></f></li>' +
+                        '       <li><font class="ec-align-left">CO</font><f class="ec-align-right">'+(Environment.coonehour*1000)+'μg/m<sup>3</sup></f></li>' +
+                        '       <li><font class="ec-align-left">PM10</font><f class="ec-align-right">'+Environment.pm10onehour+'μg/m<sup>3</sup></f></li>' +
+                        '   </ul></div>';
+                }
+
+                break;
+            case this.oOption.Bayonet:
+                var cHtml =
+                    '<div class="ex-maptip ex-maptip-list" style="display: block;    overflow: hidden;">' +
+                    '   <h3><font class="ec-align-left">'+ oPosInfo.CloudName +'</font></h3>' +
+                    // '   <hr class="clearfix">' +
+                    // '   <ul class="ec-padding-0">' +
+                    // '       <li><font class="ec-align-left">AQI(1小时空气平均质量指数)</font><span class="ec-align-right">'+Environment.aqi+'</span></li>' +
+                    // '       <li><font class="ec-align-left">PM2.5</font><f class="ec-align-right">'+Environment.pm25onehouriaqi +'μg/m<sup>3</sup></f></li>' +
+                    // '       <li><font class="ec-align-left">SO2</font><f class="ec-align-right">'+ Environment.so2onehour+'μg/m<sup>3</sup></f></li>' +
+                    // '       <li><font class="ec-align-left">NO2</font><f class="ec-align-right">'+Environment.no2onehour+'μg/m<sup>3</sup></f></li>' +
+                    // '       <li><font class="ec-align-left">O3</font><f class="ec-align-right">'+Environment.o3onehour+'μg/m<sup>3</sup></f></li>' +
+                    // '       <li><font class="ec-align-left">CO</font><f class="ec-align-right">'+(Environment.coonehour*1000)+'μg/m<sup>3</sup></f></li>' +
+                    // '       <li><font class="ec-align-left">PM10</font><f class="ec-align-right">'+Environment.pm10onehour+'μg/m<sup>3</sup></f></li>' +
+                    // '   </ul>' +
+                    '</div>';
+                break;
+        }
+
+        return cHtml;
+    },
+
+    //清空界面所有的工地数据
+    clearSites: function (oData) {
+
+        this.clearPolygonSite(oData);
+        this.clearMarkerSite(oData);
+        this.deleteSite(oData);
+    },
+
+    //删除对象
+    deleteSite: function (oData) {
+        if (!this.aoSiteInfo || !oData || !oData.anId || oData.anId.length <= 0) return;
+        var aoSiteInfo = this.aoSiteInfo
+        var anId = oData.anId;
+        for (var i = aoSiteInfo.length - 1; i >= 0; i--) {
+
+            var aoTemp = $.grep(anId, function (k, oItem) {
+                if (aoSiteInfo[i].SID === k) {
+                    return true;
+                }
+            })
+            if (!aoTemp || aoTemp.length <= 0) continue;
+
+            aoSiteInfo.splice(i, 1);
+        }
+    },
+
+    showHideSite: function (oData) {
+
+        if (oData.bFlag) {
+            if (!this.aoLayer || this.aoLayer.length <= 0) return;
+            for (var i = 0; i < this.aoLayer.length; i++) {
+                this._oSiteGroup.addLayer(this.aoLayer[i]);
+            }
+        }
+        else {
+            this.aoLayer = this._oSiteGroup.getLayers();
+            this._oSiteGroup.clearLayers();
+        }
+
+    },
+
+    //画工地
+    drawSite: function (oData) {
+        if (!oData) return;
+        this.drawOneSite(oData);
+    },
+
+    //点击点的时候出发详情显示事件
+    showSiteInfo: function (oParam) {
+
+        this.oParent._oParent.fire("MapSite:showSiteInfo", this.oData);
+
+    },
+
+    clearPolygonSite: function (oData) {
+        var anId = oData.anId;
+        var self = this;
+        for (var i = 0; i < anId.length; i++) {
+            var aoLayer = this.findLayers(this._oPolygonSiteGroup, anId[i]);
+            if (!aoLayer || aoLayer.length <= 0) continue;
+            $.each(aoLayer, function (nIndex, oLayer) {
+                if (oLayer.oMarker) {
+                    self._oPolygonSiteGroup.removeLayer(oLayer.oMarker);
+                }
+                self._oPolygonSiteGroup.removeLayer(oLayer);
+            })
+        };
+
+
+    },
+
+    clearMarkerSite: function (oData) {
+        var anId = oData.anId;
+        for (var i = 0; i < anId.length; i++) {
+            var oLayer = this.findLayer(this._oSiteGroup, anId[i]);
+            if (!oLayer) continue;
+            if (oLayer.oMarker) {
+                this._oSiteGroup.removeLayer(oLayer.oMarker);
+            }
+            this._oSiteGroup.removeLayer(oLayer);
+        };
+
+
+    },
+
+    //删除所有的数据
+    clearAllPolygonSite: function (oData) {
+        var anId = oData.anId;
+        for (var i = 0; i < anId.length; i++) {
+            var oLayer = this.findLayer(this._oPolygonSiteGroup, anId[i]);
+            if (!oLayer) continue;
+            if (oLayer.oMarker) {
+                this._oPolygonSiteGroup.removeLayer(oLayer.oMarker);
+            }
+            this._oPolygonSiteGroup.removeLayer(oLayer);
+        }
+    },
+
+})
+
+// 添加小围栏数据
+ES.MapBase.include({
+
+    drawSmallFence: function (oPosInfo) {
+        if (!oPosInfo.SmallFence || oPosInfo.SmallFence.length <= 0) return;
+        // 画小围栏数据
+        for (var i = 0; i < oPosInfo.SmallFence.length ; i++) {
+            var aoLatLng = oPosInfo.SmallFence[i].Points.map(function (oItem, i) {
+                return [oItem.Lat, oItem.Lon];
+            })
+            var oPolygon = L.polygon(aoLatLng, es.mapConfig.oSiteDoorConfig).addTo(this._oPolygonSiteGroup);
+            //oPolygon.cId = oPosInfo.SID;
+            var cHtml = this._getSmallFencePopHtml(oPosInfo.SmallFence[i]);
+            oPolygon.bindPopup(cHtml);
+            oPolygon.cId = oPosInfo.SID;
+            var oPopup = oPolygon._popup;
+            oPopup.oSmallFence = oPosInfo.SmallFence[i];
+            this.initSmallFencePopup(oPopup);
+        }
+    },
+
+    _getSmallFencePopHtml: function (oPosInfo) {
+        var cHtml = "<div style='width:300px'><strong>小围栏名称：</strong>" + oPosInfo.Name + " <div>" +
+            " <div><ul class='siteview-siteinfo' style='padding-left: 0px;'>" +
+            " <li><strong>小围栏：</strong>" + (oPosInfo.Poi || "") + "</li>" +
+            " <li cId='liBandSmallFenceVehCnt'><strong>绑定车辆数：</strong><span> 0</span> <a cid='" + oPosInfo.Id + "' class='btn btn-sm btn-success'  style='float: right;  background-color: green; border-radius: 4px; padding-left: 4px; padding-right: 4px; color: white; cursor: pointer;'>清除车辆</a></li>" +
+
+            "</ul></div>"+
+            "<div cId='divContent'></div>"
+
+        return cHtml;
+    },
+
+    initSmallFencePopup: function (oPopup) {
+
+        var self = this;
+
+        if (!oPopup) return;
+
+        oPopup.on("contentupdate", function () {
+
+            var oGpsInfo = this.oSmallFence;
+            self.setSmallFenceVehInfo(oGpsInfo);
+
+            $("li[cid='liBandSmallFenceVehCnt']").find("a").bind("click", function () {
+
+                ES.getData({ aoSmall: [oGpsInfo.Id] }, "/Site/DelVehInfoBySmallFenceIds",
+                    self.DelSmallFenceVehInfoHandler, self);
+
+            })
+        })
+    },
+
+    DelSmallFenceVehInfoHandler: function (oData) {
+        if (oData.IsSuccess) {
+            $.MsgBox.success("清除小围栏成功！");
+            $("div[cId='divContent']").html("");
+        } else {
+            $.MsgBox.error("错误", data.Msg);
+        }
+
+    },
+
+    // 设置车辆趟数 列表
+    setSmallFenceVehInfo: function (oData) {
+        var self = this;//GetSiteTrip
+        ES.getData({ Id: oData.Id }, "/Site/GetSmallFenceVehInfo", this.setSmallFenceVehInfoHandler, this, oData);
+    },
+
+    setSmallFenceVehInfoHandler: function (oTemp) {
+
+        var aoVehNo = oTemp.oData;
+
+        $("li[cid='liBandSmallFenceVehCnt']").find("span").html(aoVehNo.length);
+
+        var cHtml = this.getSmallFenceTrHtml(aoVehNo);
+
+        {
+            var cVehInfo = '<div style="height: ' + this.calSmallFenceHeigh(aoVehNo) + 'px; overflow-y: auto">  <table class="siteview-vehinfo-table" style="width:100%">'
+            cVehInfo += '<thead class="siteview-vehinfo-table-th"><tr>'
+            cVehInfo += '<th class="siteview-vehinfo-table-th-vehno" style="padding: 0 10px;text-align: center;">车牌号</th></thead>'
+            cVehInfo += '<tbody class="siteview-vehinfo-table-tb">'
+
+            cVehInfo += (cHtml || "") + " </tbody> </table></div>"
+        }
+        $("div[cId='divContent']").html(cVehInfo);
+    },
+
+    // 设置工地表格
+    setSmallFenceSiteTable: function (oData, aoVehNo) {
+
+        if (!oData || oData.length <= 0) return "";
+        var nCnt = 0;
+        var dWorkSiteTime = 0;
+        var dUnloadSiteTime = 0;
+
+        // 情况列
+        for (var i = 0; i < oData.length; i++) {
+            var nIndex = ES.Util.arrayIndex(aoVehNo, oData[i], "VehicleNo");
+            if (nIndex < 0) {
+                var oTemp = {};
+                ES.extend(oTemp, oData[i]);
+                oTemp.nBeginTime = new Date(oData[i].BeginTime).getTime();
+                oTemp.nEndTime = new Date(oData[i].EndTime).getTime();
+                aoVehNo.push(oTemp);
+                oTemp.nCnt = 1;
+            }
+            else {
+                // 更新时间
+                var nBT = new Date(oData[i].BeginTime).getTime();
+                var nET = new Date(oData[i].EndTime).getTime();
+                if (aoVehNo[nIndex].nBeginTime > nBT) {
+                    aoVehNo[nIndex].nBeginTime = nBT;
+                    aoVehNo[nIndex].BeginTime = oData[i].BeginTime;
+                }
+                if (aoVehNo[nIndex].nEndTime < nET) {
+                    aoVehNo[nIndex].nEndTime = nET;
+                    aoVehNo[nIndex].EndTime = oData[i].EndTime;
+                }
+
+                aoVehNo[nIndex].nCnt = aoVehNo[nIndex].nCnt + 1;
+            }
+
+            nCnt = nCnt + 1;
+            if (i == 0) {
+                dWorkSiteTime = new Date(oData[i].BeginTime).getTime();
+                dUnloadSiteTime = new Date(oData[i].EndTime).getTime();
+            }
+            else {
+                if (dWorkSiteTime > new Date(oData[i].WorkSiteTime).getTime()) {
+                    dWorkSiteTime = new Date(oData[i].WorkSiteTime).getTime()
+                }
+                if (dUnloadSiteTime < new Date(oData[i].UnloadSiteTime).getTime()) {
+                    dUnloadSiteTime = new Date(oData[i].UnloadSiteTime).getTime()
+                }
+            }
+        }
+
+        return { nCnt: nCnt, dWorkSiteTime: dWorkSiteTime, dUnloadSiteTime: dUnloadSiteTime };
+    },
+
+    // 初始化tr 的html数据
+    getSmallFenceTrHtml: function (aoVeh) {
+        var cHtml = "";
+        if (!aoVeh || aoVeh.length <= 0) return cHtml;
+
+        for (var i = 0; i < aoVeh.length; i++) {
+            cHtml += '<tr >' +
+                '<td class="siteview-vehinfo-table-tb-veh" >' + aoVeh[i].VehicleNo + '	</td>' +
+                '</tr>';
+        }
+        return cHtml
+    },
+
+    calSmallFenceHeigh: function (aoVehNo) {
+        if (aoVehNo.length >= 3) return 100;
+
+        return (aoVehNo.length + 1) * 25;
+    },
+    addSmallFencePopup: function (oGpsInfo, oLayer) {
+        if (!oGpsInfo || !oLayer) return;
+        this._oLayerPop = oLayer;
+        this.setVehInfo(oGpsInfo);
+    }
+})

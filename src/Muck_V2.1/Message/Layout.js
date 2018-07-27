@@ -1,0 +1,72 @@
+/**
+ * Created by liulin on 2017/8/31.
+ */
+
+
+ES.Muck.BaseLayout = ES.Evented.extend({
+
+    cHTML: '',
+
+
+    oOption: {
+        cPContainer: '.ex-layout-main',
+        nWidth: 219,
+        nHeight: 65,
+        nSearchHeight: 45
+    },
+
+    initialize: function (oParent, oOption) {
+        ES.setOptions(this, oOption);
+        this._oParent = oParent;
+
+        // 初始化界面
+        this.initUI();
+
+        this.initOn();
+    },
+
+    initOn: function () {
+        this._oParent.on('Report:Layout.resize', this.resize, this);
+
+    },
+
+    resize: function (oData) {
+        if (oData.nWidth) {
+            this.$_oContainer.css({ width: oData.nWidth });
+        }
+        if (oData.nHeight) {
+            this.$_oContainer.css({ height: oData.nHeight });
+        }
+
+    },
+
+    reflesh: function (nWidth, nHeight) {
+        this.$_oContainer.css({ width: nWidth, height: nHeight });
+    },
+
+    initUI: function () {
+        this.$_oContainer = $(this.cHTML);
+        $(this.oOption.cPContainer).append(this.$_oContainer);
+
+        // 主地图显示
+        $('.ex-layout-content').css({ height: $(window).height(), width: $(window).width() - this.oOption.nWidth });
+
+        var $dtGridCantrain = $('.dt-grid-container');
+        var $formSearch = $('.ex-layout-form-search');
+        $dtGridCantrain.height($('.ex-layout-content').height() - $formSearch.height() - this.oOption.nSearchHeight - $('.echarts-style-box').height() - 40);
+
+
+    },
+
+});
+ES.Muck.Layout = ES.Muck.BaseLayout.extend({
+    initUI: function () {
+
+
+        $('.ex-layout-content').css({ height: $(window).height(), width: $(window).width() - $('.ex-layout-sider.RuleManage').width() });
+        var $dtGridCantrain = $('.dt-grid-container');
+        var $formSearch = $('.ex-layout-form-search');
+        var $RuleTabs = $('.ex-rule-tabs');
+        $dtGridCantrain.height($('.ex-layout-content').height() - $formSearch.height() - $RuleTabs.height() - 40);
+    },
+})

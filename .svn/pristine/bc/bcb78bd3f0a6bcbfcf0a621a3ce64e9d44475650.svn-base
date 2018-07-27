@@ -1,0 +1,35 @@
+/**
+ * Created by liulin on 2017/9/1.
+ */
+
+ES.Muck.Search = ES.Muck.BaseSearch.extend({
+
+    initUI: function () {
+        this.oSearchInput =$('#txt_name');
+
+        this.oSearchBtn =$('.ex-final-button>button:eq(0)');
+        this.oAddBtn =$('.ex-final-button>button:eq(1)');
+    },
+
+    initEvent:function() {
+        var self = this;
+        // 注册查询事件
+        this.oSearchBtn.bind('click', function () {
+
+            var cSearchVal = self.oSearchInput.val();
+            var oParam = {Name: cSearchVal};
+            // 触发查询
+            self._oParent.oGrid.query({oParam: oParam});
+
+        });
+
+        var oParent = this._oParent;
+        this.oAddBtn.bind('click', function () {
+
+            oParent.oEditD = new ES.Common.Dialog(oParent,{bRemove:true,cUrl:'/User/Edit'});
+            oParent.oEditD.addShow();
+
+        });
+    },
+
+});

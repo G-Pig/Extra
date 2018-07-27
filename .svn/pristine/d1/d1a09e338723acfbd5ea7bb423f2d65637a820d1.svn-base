@@ -1,0 +1,352 @@
+/**
+ * Created by liulin on 2017/9/27.
+ */
+
+ES.VehInfo.SpeedDoorLineChart = ES.Class.extend({
+
+    oOption: {
+        cDivContain: 'speedGridEchart',
+        nMaxCnt: 30,
+    },
+    _aoSpeed: [],
+    _aoDoor: [],
+    _aoDate:[],
+
+    // 车辆列表构造函数
+    initialize: function (oParent, oOption) {
+        ES.setOptions(this, oOption);
+        this._oParent = oParent;
+        this.oChart = null;
+        this.oChartOption = null;
+
+        this.initChart();
+    },
+
+    // 初始化图表
+    initChart: function () {
+        this.oChart = echarts.init(document.getElementById(this.oOption.cDivContain));
+        this._setChartConfig();
+    },
+
+    // 设置图表属性
+    _setChartConfig: function (ec) {
+
+        this.oChartOption = {
+            color: ["#72d572", "#29b6f6"],
+            tooltip: {
+                trigger: 'axis',
+                formatter: function (params) {
+                    var _c = '开';
+                    if (params[1].value == 0) {
+                        _c = '关'
+                    }
+
+                    return params[0].name + '<br/>'
+                        + params[0].seriesName + ' : ' + params[0].value + ' (km/h)<br/>'
+                        + params[1].seriesName + ' : ' + _c;
+                },
+                axisPointer: {
+                    animation: false
+                }
+            },
+            legend: {
+                data: ['速度', '密封状态'],
+            },
+            grid: {
+                bottom: '10%'
+
+            },
+            xAxis: {
+                type: 'category',
+                boundaryGap: false,
+                data: []
+            },
+            yAxis: [
+                {
+                    name: '速度(km/h)',
+                    type: 'value',
+                    max: 100
+                },
+                {
+                    name: '密封状态',
+                    nameLocation: 'start',
+                    max: 10,
+                    type: 'value',
+                    inverse: true
+                }
+            ],
+
+            series: [{
+                name: '速度',
+                type: 'line',
+                data: [],
+                hoverAnimation: false,
+                smooth: true,
+                areaStyle: {
+                    normal: {}
+                },
+                lineStyle: {
+                    normal: {
+                        width: 1
+                    }
+                }
+            }, {
+                name: '密封状态',
+                type: 'line',
+                yAxisIndex: 1,
+                hoverAnimation: false,
+                smooth: true,
+                areaStyle: {
+                    normal: {}
+                },
+                lineStyle: {
+                    normal: {
+                        width: 1
+                    }
+                },
+                data: []
+            }]
+        };
+
+        this.oChart.setOption(this.oChartOption, true);
+
+        // 监听窗体改变事件
+        //var self = this;
+        //window.on("Wnd:wndResize", function () {
+        //    self.oChart.resize();
+        //})
+    },
+
+    // 设置数据时，对数据进行处理
+    setData: function (oGpsInfo) {
+        if (!oGpsInfo){
+            return;
+        }
+        if (this.oGpsInfo) {
+            if (this.oGpsInfo.devNo !== oGpsInfo.devNo) {
+                // 情况数据
+                this._aoSpeed.splice(0, this._aoSpeed.length);
+                this._aoDoor.splice(0, this._aoDoor.length);
+                this._aoDate.splice(0, this._aoDate.length);
+            }
+        }
+
+        this.oGpsInfo = oGpsInfo;
+    },
+
+    // 数据处理,要对
+    setSeriesData: function (oGpsInfo) {
+        if (!oGpsInfo) return;
+
+        this._aoSpeed.push(oGpsInfo.speed || 0);
+
+        var nDoor = 0;
+        if (!oGpsInfo.Status) {
+            nDoor = 0;
+        }
+        else {
+            if (oGpsInfo.Status.FrontDoor === true) {
+                nDoor = 1;
+            }
+            else {
+                nDoor = 0;
+            }
+        }
+
+        this._aoDoor.push(nDoor);
+
+        this._aoDate.push(ES.Util.dateFormat((oGpsInfo.gpsTime || 0), "hh:mm:ss"));
+
+        if (this._aoSpeed.length > this.oOption.nMaxCnt) {
+            this._aoSpeed.splice(0, 1);
+            this._aoDoor.splice(0, 1);
+            this._aoDate.splice(0, 1);
+        }
+    },
+
+    // 设置速度值
+    changeSpeedLine: function (oGpsInfo) {
+        // 缓存当前图表值
+        this.setData(oGpsInfo)
+        this.setSeriesData(oGpsInfo);
+
+        this.oChartOption.series[0].data = this._aoSpeed;
+        this.oChartOption.series[1].data = this._aoDoor;
+        this.oChartOption.xAxis.data = this._aoDate;
+
+        this.oChart.setOption(this.oChartOption, true);
+    },
+
+    reflesh:function(){
+        this.oChart.resize();
+    },
+
+    // 清空图表
+    clearChart: function () {
+        if (!this.oChart) return;
+        this.oChart.clear();
+    },
+
+});
+
+
+ES.VehInfo.SpeedLineChart = ES.Class.extend({
+
+    oOption: {
+        cDivContain: 'speedGridEchart',
+        nMaxCnt: 30,
+    },
+    _aoSpeed: [],
+    _aoDoor: [],
+    _aoDate:[],
+
+    // 车辆列表构造函数
+    initialize: function (oParent, oOption) {
+        ES.setOptions(this, oOption);
+        this._oParent = oParent;
+        this.oChart = null;
+        this.oChartOption = null;
+
+        this.initChart();
+    },
+
+    // 初始化图表
+    initChart: function () {
+        this.oChart = echarts.init(document.getElementById(this.oOption.cDivContain));
+        this._setChartConfig();
+    },
+
+    // 设置图表属性
+    _setChartConfig: function (ec) {
+
+        this.oChartOption = {
+            color: ["#72d572", "#29b6f6"],
+            tooltip: {
+                trigger: 'axis',
+                formatter: function (params) {
+                    return params[0].name + '<br/>'
+                        + params[0].seriesName + ' : ' + params[0].value + ' (km/h)<br/>' ;
+                },
+                axisPointer: {
+                    animation: false
+                }
+            },
+            legend: {
+                data: ['速度'],
+            },
+            grid: {
+                bottom: '10%'
+
+            },
+            xAxis: {
+                type: 'category',
+                boundaryGap: false,
+                data: []
+            },
+            yAxis: [
+                {
+                    name: '速度(km/h)',
+                    type: 'value',
+                    max: 100
+                }
+            ],
+
+            series: [{
+                name: '速度',
+                type: 'line',
+                data: [],
+                hoverAnimation: false,
+                smooth: true,
+                areaStyle: {
+                    normal: {}
+                },
+                lineStyle: {
+                    normal: {
+                        width: 1
+                    }
+                }
+            }]
+        };
+
+        this.oChart.setOption(this.oChartOption, true);
+
+        // 监听窗体改变事件
+        //var self = this;
+        //window.on("Wnd:wndResize", function () {
+        //    self.oChart.resize();
+        //})
+    },
+
+    // 设置数据时，对数据进行处理
+    setData: function (oGpsInfo) {
+        if (!oGpsInfo){
+            return;
+        }
+        if (this.oGpsInfo) {
+            if (this.oGpsInfo.devNo !== oGpsInfo.devNo) {
+                // 情况数据
+                this._aoSpeed.splice(0, this._aoSpeed.length);
+                this._aoDoor.splice(0, this._aoDoor.length);
+                this._aoDate.splice(0, this._aoDate.length);
+            }
+        }
+
+        this.oGpsInfo = oGpsInfo;
+    },
+
+    // 数据处理,要对
+    setSeriesData: function (oGpsInfo) {
+        if (!oGpsInfo) return;
+
+        this._aoSpeed.push(oGpsInfo.speed || 0);
+
+        var nDoor = 0;
+        if (!oGpsInfo.Status) {
+            nDoor = 0;
+        }
+        else {
+            if (oGpsInfo.Status.FrontDoor === true) {
+                nDoor = 1;
+            }
+            else {
+                nDoor = 0;
+            }
+        }
+
+        this._aoDoor.push(nDoor);
+
+        this._aoDate.push(ES.Util.dateFormat((oGpsInfo.gpsTime || 0), "hh:mm:ss"));
+
+        if (this._aoSpeed.length > this.oOption.nMaxCnt) {
+            this._aoSpeed.splice(0, 1);
+            this._aoDoor.splice(0, 1);
+            this._aoDate.splice(0, 1);
+        }
+    },
+
+    // 设置速度值
+    changeSpeedLine: function (oGpsInfo) {
+        // 缓存当前图表值
+        this.setData(oGpsInfo)
+        this.setSeriesData(oGpsInfo);
+
+        this.oChartOption.series[0].data = this._aoSpeed;
+        //this.oChartOption.series[1].data = this._aoDoor;
+        this.oChartOption.xAxis.data = this._aoDate;
+
+        this.oChart.setOption(this.oChartOption, true);
+    },
+
+    reflesh:function(){
+        this.oChart.resize();
+    },
+
+    // 清空图表
+    clearChart: function () {
+        if (!this.oChart){
+            return;
+        }
+        this.oChart.clear();
+    },
+
+})

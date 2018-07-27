@@ -1,0 +1,186 @@
+/** 负责加载grid数据 */
+ES.Muck.Grid = ES.Common.BaseJqGrid.extend({
+    setColumns:function(){
+        var list =  [
+            { label: 'Id', name: 'Id', editable: true, sortable: false, width: 120, align: 'center',hidden:true },
+            { label: '企业名称', name: 'EnterpriceName', editable: true, sortable: false, width: 120, align: 'center' },
+            { label: '出土工地', name: 'SiteName', editable: true, sortable: false, width: 120, align: 'center' },
+            { label: '出土车辆数', name: 'upVehicleCouunt', editable: true, sortable: false, width: 40, align: 'center' },
+            {
+                label: '当前在线率', name: 'OlineRate', editable: true, sortable: false, width: 40, align: 'center',
+                formatter: function (val, opt, item) {
+                    return val + "%";
+                }
+            },
+            { label: '上报时间', name: 'CreateTime', editable: true, sortable: false, width: 100, align: 'center' },
+            {
+                label: '审核状态', name: 'StatusStr', editable: true, sortable: false, width: 60, align: 'center',
+                formatter: function (val, opt, item) {
+                    var content = '';
+                    var type = '';
+                    if (val == "允许出土") {
+                        type = 'ec-btn-success';
+                    } else {
+                        type = 'ec-btn-primary';
+                    }
+                    content += '<button class="ec-btn ec-btn-xs ' + type + '"><i class=""></i>' + val + '</button>';
+                    return content;
+                }
+            },
+            {
+                label: "操作",
+                name: "actions",
+                align: 'center',
+                width:60,
+                formatter: function (val, opt, item) {
+                    var content = '';
+                    //if (item.Type === "需要重新上传的字段") {
+                    content += '<button class="ec-btn ec-radius ec-btn-xs ec-btn-success reUpload"' + btnAuth.reUpload + '><i class="ec-icon-cog reUpload"></i> 重新上传</button>';
+                    //};
+                    content += '  ';
+                    content += '<button ' + btnAuth.detail + 'class="ec-btn ec-btn-xs ec-btn-primary detail"><i class="ec-icon-eye detail"></i>  详情</button>';
+                    return content;
+                }
+            }
+
+        ];
+
+        this.aoCol = list;
+    },
+
+    initClick: function (e, oModel) {
+        if (!e) {
+            return;
+        }
+        if ($(e.target).hasClass('detail')) {
+            this._oParent.oVehicleD = new ES.Common.Detail(this._oParent, {
+                bRemove: true,
+                //UploadSiteId: oModel.Id
+            }, {
+                title: '出土车辆上报 — 详情',
+                content: '<h2 style="margin-left:30px;line-height:60px;">平均上线率：<span style="color:red;">' + oModel.OlineRate + '%</span></h2><div class="ex-Permit-VehicleModel"><table id="VehicleModelGridContainer" class="dt-grid-container" style="width:100%;"></table><div id="VehicleModelGridToolBarContainer" class="dt-grid-toolbar-container"></div>',
+                height: 450,
+                width: 800
+            });
+            this._oParent.oVehicleD.del(oModel.Id);
+        }
+        if ($(e.target).hasClass('reUpload')) {
+            var VehcleNoS;
+            if (oModel.Vehiclelis.length > 0) {
+                for (var i = 0; i < oModel.Vehiclelis.length; i++) {
+                    VehcleNoS += oModel.Vehiclelis[i].VehcleNo;
+                }
+            } else {
+                VehcleNoS = null;
+            }
+            var UploadSiteId = oModel.Id ? null : oModel.Id;
+            this._oParent.oEditD = new ES.Common.uploadEdit(this._oParent, {
+                bRemove: true, cUrl: '/UploadSite/Edit',
+                UploadSiteId: oModel.Id,
+                EnterpriceId: oModel.EnterpriceId ,
+                Vehiclelis: VehcleNoS,
+                OlineRate: oModel.OlineRate,
+                SiteId: oModel.SiteId,
+                Id: oModel.Id,
+            }, { title: "上传工地车辆" });
+            this._oParent.oEditD.showModal();
+
+        }
+    },
+});
+//上传车辆时右边的表格
+ES.Muck.uploadGrid = ES.Common.BaseJqGrid.extend({
+    initialize: function (oParent, oOption, oJqGridOption) {
+        ES.setOptions(this, oOption);
+        this._oParent = oParent;
+        this.aoCol = [];
+        this.setColumns();
+        this.initUI();
+        this._countUrl = oJqGridOption.countUrl;
+        var self = this;
+        ES.extend(
+            this.oJqGridOption,
+            oJqGridOption,
+            {
+                onSelectRow: function (cId, d, e) {
+                    //var record = $(this).data('oData').dataList[parseInt(cId)];
+
+                    //self.gridCheck(record, d);
+                },
+                colModel: this.aoCol,
+                pager: '#' + this.oOption.cPagerContainer,
+                loadComplete: function (data) {
+                    var searchData = data;
+                    //选择企业
+                    ES.getData({},"/SelectDataJson/GetEnterpriseItems",function(data){
+                        var optionstring = "";
+                        for (var i = 0;i<data.length;i++) {
+                            optionstring += "<option value=\"" + data[i].Value + "\" >" + data[i].Text + "</option>"
+                        };
+                        $('#EnterpriceIdInside').append(optionstring);
+                        $(" #EnterpriceIdInside option[value='" + searchData.exparameters.EnterpriceId + "']").attr("selected", "selected");
+                    })
+                    //选择工地
+                    ES.getData({},"/SelectDataJson/GetSite",function(data){
+                        var optionstring = "";
+                        for (var i = 0;i<data.length;i++) {
+                            optionstring += "<option value=\"" + data[i].Value + "\" >" + data[i].Text + "</option>"
+                        };
+                        $('#siteId').append(optionstring);
+                        $(" #siteId option[value='" + searchData.exparameters.SiteId + "']").attr("selected", "selected");
+                    })
+                    if (data.userdata) {
+                        self.gridData = data;
+
+                        //添加选中项开始
+                        //$('#' + self.oOption.cGridContainer).jqGrid("resetSelection");//这行很重要
+                        for (var i = 0; i < data.dataList.length; i++) {
+                            $('#' + self.oOption.cGridContainer).jqGrid("setSelection", (i + 1), true);
+                        }
+                        //$('#onlin_rate').text(data.userdata.onlin_rate);
+                        //缓存数据到控件
+                        $(this).data('oData', data);
+                    } else {
+                        $('#onlin_rate').text(0);
+                    }
+
+                },
+                gridComplete: function (data) {
+                }
+            });
+    },
+    setColumns: function () {
+        var list = [
+            { label: '车牌号', name: 'VehicleNo', editable: true, align: 'center', sortable: false, width: 50 },
+            { label: 'Id', name: 'Id', editable: true, align: 'center', sortable: false, width: 50, hidden:true },
+            { label: '企业Id', name: 'ResourceTypeId', editable: true, align: 'center', sortable: false, width: 50, hidden: true },
+            { label: '所属企业', name: 'ResourceTypeName', editable: true, align: 'center', width: 50, sortable: false },
+            { label: '在线状态', name: 'Online', editable: true, align: 'center', sortable: false, width: 50 },
+            //{
+            //    label: "操作",
+            //    name: "actions",
+            //    align: 'center',
+            //    width:50,
+            //    sortable: false,
+            //    formatter: function (val, opt, item) {
+            //        var content = '';
+            //        content += '<button class="ec-btn ec-btn-xs ec-btn-default remove"><i class="ec-icon-eye remove"></i><span> 移除</span></button>';
+            //        return content;
+            //    }
+            //}
+        ];
+
+        this.aoCol = list;
+    },
+    //表格内的点击事件
+    initClick: function (e, oModel) {
+        if ($(e.target).hasClass('remove')) {
+            var removeList = oModel.VehicleNo;
+
+
+        }
+    },
+    resizeBody: function () {
+
+    },
+});

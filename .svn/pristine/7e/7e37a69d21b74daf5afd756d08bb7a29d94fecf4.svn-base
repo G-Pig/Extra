@@ -1,0 +1,66 @@
+/**
+ * Created by liulin on 2017/8/31.
+ */
+
+ES.Muck.Search = ES.Muck.BaseSearch.extend({
+
+    initUI: function () {
+        this.oSearchInput =$('#ruleName');
+        this.oSearvhBtn =$('.ex-grid-search');
+        this.oAddBtn =$('.ex-grid-add');
+    },
+
+    initEvent:function() {
+        var self = this;
+        // 注册查询事件
+        this.oSearvhBtn.bind('click', function () {
+
+            var cSearchVal = self.oSearchInput.val();
+            var gType =parseInt($('.ex-rule-tab>li.active').attr('data-index'));
+            var oParam = {Name: cSearchVal,Type: gType};
+            // 触发查询
+            self._oParent.oGrid.query({oParam: oParam});
+
+        });
+        var oParent = this._oParent;
+
+        this.oAddBtn.bind('click',function(){
+            var _index = parseInt($('.ex-layout-sider  .ex-rule-tab').find('li.active').attr('data-index'));
+
+            if(!_index){
+                oParent.oAddD = new ES.Common.AddType(oParent,{bRemove:true},{title: '新增 —— 类型选择',
+                    content:'<div class="ex-rule-tabs modelType">'+
+                    '           <ul class="ex-rule-tab ec-avg-sm-5">'+
+                    '               <li data-index="1"><i class="ex-rule-tab5"></i><span>线路偏移</span></li>'+
+                    '               <li data-index="2"><i class="ex-rule-tab2"></i><span>禁入规则</span></li>'+
+                    '               <li data-index="3"><i class="ex-rule-tab3"></i><span>禁出规则</span></li>'+
+                    '               <li data-index="4"><i class="ex-rule-tab12"></i><span>超速规则</span></li>'+
+                    //'               <li data-index="5"><i class="ex-rule-tab6"></i><span>路段限速</span></li>'+
+                    '           </ul>'+
+                    '         </div>'});
+                oParent.oAddD.del();
+            }else{
+                switch (_index){
+                    case 1:
+                        self._oParent.addModel = new ES.Common.Dialog(self._oParent,{bRemove:true,cUrl:'/RuleManage/Edit'});
+                        break;
+                    case 2:
+                        self._oParent.addModel = new ES.Common.Dialog(self._oParent,{bRemove:true,cUrl:'/RuleManage/Edit'});
+                        break;
+                    case 3:
+                        self._oParent.addModel = new ES.Common.Dialog(self._oParent,{bRemove:true,cUrl:'/RuleManage/Edit'});
+                        break;
+                    case 4:
+                        self._oParent.addModel = new ES.Common.Dialog(self._oParent,{bRemove:true,cUrl:'/RuleManage/Edit'});
+                        break;
+                    case 5:
+                        self._oParent.addModel = new ES.Common.Dialog(self._oParent,{bRemove:true,cUrl:'/RuleManage/EditRSpeedLimit'});
+                        break;
+                }
+                self._oParent.addModel.addShow(_index);
+            }
+
+        });
+
+    },
+});

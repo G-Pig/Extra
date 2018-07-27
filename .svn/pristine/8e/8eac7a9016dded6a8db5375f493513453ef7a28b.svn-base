@@ -1,0 +1,91 @@
+/**
+ * 负责加载grid数据
+ *
+ * Created by liulin on 2017/8/31.
+ */
+
+ES.Muck.Grid = ES.Common.BaseJqGrid.extend({
+    initialize: function (oParent, oOption, oJqGridOption) {
+        ES.setOptions(this, oOption);
+        this._oParent = oParent;
+        this.aoCol = [];
+        this.setColumns();
+        this.initUI();
+        this._countUrl = oJqGridOption.countUrl;
+        var self = this;
+        ES.extend(
+            this.oJqGridOption,
+            oJqGridOption,
+            {
+                onSelectRow: function (cId, d, e) {
+                    var record = $(this).data('oData').dataList[parseInt(cId) - 1];
+                    self.initClick(e, record);
+                },
+                colModel: this.aoCol,
+                pager: '#' + this.oOption.cPagerContainer,
+                loadComplete: function (data) {
+                    var searchData = data;
+                    $(this).data('oData', data);
+                    if (data.userdata) {
+                        self.gridData = data;
+
+                        //添加选中项开始
+                        //$('#' + self.oOption.cGridContainer).jqGrid("resetSelection");//这行很重要
+                        //for (var i = 0; i < data.dataList.length; i++) {
+                        //    $('#' + self.oOption.cGridContainer).jqGrid("setSelection", (i + 1), true);
+                        //}
+                        $('#reportsTotal').text(data.userdata.onlin_rate+"%");
+                        //$("#EnterpriceInside option[value='" + data.exparameters.EnterpriceId + "']").attr("selected", "selected");
+                        //$("#Site option[value='" + data.exparameters.SiteId + "']").attr("selected", "selected");
+                        //缓存数据到控件
+                    }
+
+
+                },
+                gridComplete: function (data) {
+                }
+            });
+    },
+
+    setColumns:function(){
+       var list =  [
+            { label: '车牌号', name: 'VehicleNo', editable: true,sortable: false,width:60, align: 'center'},
+            { label: '企业名称', name: 'CompanyName', editable: true,sortable: false,width:120, align: 'center' },
+            { label: '所属区域', name: 'DistName', editable: true, sortable: false,width:60, align: 'center' },
+           { label: '报警类型', name: 'AlarmTypeStr', editable: true, sortable: false,width:50, align: 'center'},
+           { label: '持续时间(分钟)', name: 'ContinueTime', editable: true, sortable: false,width:50, align: 'center'},
+           { label: '开始时间', name: 'StartAlarmTime', editable: true, sortable: false,width:70, align: 'center'},
+
+           {
+                label: '操作',
+                name: 'actions',
+                width: 100,
+                sortable: false,
+                title: false,
+                align: 'center',
+                formatter: function (cellValue, options, rowObject) {
+                    var content = '';
+                    content += '<button  class="ec-btn ec-btn-xs ec-btn-default ec-radius view"' + btnAuth.aTrack + '><i class="ec-icon-eye view"></i>  查看轨迹</button>';
+                    return content;
+                }
+            }
+        ];
+
+        this.aoCol = list;
+    },
+    initClick: function (e, oModel) {
+        if (!e) {
+            return;
+        }
+        if ($(e.target).hasClass('view')) {
+            window.open("/MapView/TrackView?PhoneNum=" + oModel.PhoneNum + "&VehicleNo=" + oModel.VehicleNo);
+            /*this._oParent.oDetailD = new ES.Common.Detail(this._oParent, { bRemove: true, cUrl: '/VehicleState/Detail'},
+                { title: '车辆详情 — 车牌号：'+oModel.VehicleNo }
+                );
+            this._oParent.oDetailD.showModal(oModel);*/
+        }
+    },
+
+});
+
+

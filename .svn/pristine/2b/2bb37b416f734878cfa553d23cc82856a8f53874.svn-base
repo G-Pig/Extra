@@ -1,0 +1,61 @@
+/**
+ * Created by liulin on 2017/9/1.
+ */
+
+ES.Muck.Grid = ES.Common.BaseJqGrid.extend({
+
+    // 查询gird 用户信息
+    setColumns: function () {
+
+        this.aoCol =[
+            { label: '车牌号', name: 'VehicleNo',  align: 'center' },
+            { label: '所属地区', name: 'AreaName', align: 'center' },
+            { label: '所属公司', name: 'EnterpriseName', align: 'center' },
+            { label: '经过时间', name: 'StartTime', align: 'center' },
+            {
+                label: '操作',
+                name: '',
+                width: 270,
+                align: 'center',
+                formatter: function (cellValue, options, rowObject) {
+                    var content = '';
+                    content += '<button  class="ec-btn ec-btn-xs ec-btn-default ec-radius track"><i class="ec-icon-edit track"></i>  轨迹</button>';
+                    return content;
+                }
+            }
+        ];
+    },
+
+    initClick: function (e, oModel) {
+        if (!e) {
+            return;
+        }
+        if ($(e.target).hasClass('track')) {
+            var StartTime = new Date(oModel.StartTime).getTime() + 24*60*60*1000;
+            window.open("/MapView/TrackView?PhoneNum=" + oModel.PhoneNum + "&VehicleNo=" + oModel.VehicleNo+ "&StartTime=" + StartTime);
+        }
+        if ($(e.target).hasClass('edit')) {
+            this._oParent.oEditD = new ES.Common.Dialog(this._oParent,{bRemove:true,cUrl:'/Department/Edit'});
+            this._oParent.oEditD.editShow(oModel);
+        }
+        if ($(e.target).hasClass('del')) {
+            this._oParent.oDelD = new ES.Common.DelEntity(this._oParent,{bRemove:true,cUrl:'/Department/Delete'},{
+                title: '删除操作-部门',
+                content: '是否要删除数据！'});
+            oModel.id = oModel.ResourceTypeId;
+            this._oParent.oDelD.del(oModel);
+        }
+    },
+    resizeBody: function () {
+        var self = this;
+        $(window).resize(function () {
+            $(self.oOption.cContainer).css("width", $(window).width() - $('.ex-layout-sider').width()+'px');
+            $(self.oOption.cContainer).css({ height: $(window).height() });
+            $('#' + self.oOption.cGridContainer).setGridWidth($(self.oOption.cContainer).width());
+            $('#' + self.oOption.cGridContainer).setGridHeight($(self.oOption.cContainer).height() - $('.ex-fence-vehicle-echart').height() - 100);
+        });
+
+    },
+
+});
+

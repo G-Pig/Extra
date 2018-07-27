@@ -1,0 +1,204 @@
+/**
+* 所有基于 新版的地图控件 都是基于2.0 来设置的
+*/
+
+jake.addListener('complete', function () {
+    process.exit();
+});
+
+
+function getDefaultVertion(vertion) {
+    if (!vertion) {
+        vertion = '2.0.1'
+    }
+    return vertion;
+}
+function getDefaultVertionBHT(vertion) {
+    if (!vertion) {
+        vertion = '2.0.2'
+    }
+    return vertion;
+}
+function getGPSVertion(vertion) {
+    if (!vertion) {
+        vertion = '2.0.1-GPS'
+    }
+    return vertion;
+}
+
+{
+    var MV = require('./build/MapView/build.js');
+    task('MV', {async: true}, function (vertion) {
+        MV.build(complete, '1v', 'MapView', getDefaultVertion(vertion),'D:\\ATaoCode\\MHIS\\MHIS.Web\\Asset\\scripts\\site\\MapView\\');
+    });
+
+}
+
+
+
+
+// 云图设计
+{
+    var CM = require('./build/CloudMap/build.js');
+
+    task('ECM', {async: true}, function (vertion) {
+
+        CM.build(complete, 'j', 'CloudMap', getDefaultVertion(vertion), 'D:\\ESWorkCode\\渣土车项目\\渣土车V1.1\\EPMonitor\\EPMonitor\\Asset\\scripts\\sites\\CloudMap\\');
+
+    });
+    task('WTMCM', {async: true}, function (vertion) {
+        CM.build(complete, '33', 'CloudMap', getDefaultVertion(vertion), 'D:\\AWordCode\\assets\\scripts\\sites\\');
+    });
+
+    task('BossCloud', {async: true}, function (vertion) {
+        CM.build(complete, 'b', 'CloudMap', getDefaultVertion(vertion), 'E:\\work_8.14\\HTML\\Asset\\scripts\\sites\\CloudMap\\');
+    });
+
+    task('cm', {async: true}, function (vertion) {
+
+        CM.build(complete, 'f', 'CloudMap', getDefaultVertion(vertion), 'D:\\ESWorkCode\\Boss\\BossV1.1\\ExsunBoss-V1.1\\ExsunBoss\\Asset\\scripts\\sites\\CloudMap\\');
+
+    });
+
+    task('Line', {async: true}, function (vertion) {
+
+        CM.build(complete, '23', 'LinePlanning', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码-V2.1\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+
+    });
+    task('MCMap', {async: true}, function (vertion) {
+
+        CM.build(complete, '43', 'MuckCloudMap', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码-bht-V2.1\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+
+    });
+}
+
+// 报表
+{
+    var Report = require('./build/Report/build.js');
+
+    task('Report', {async: true}, function (vertion) {
+
+        Report.build(complete, '3', 'Report', getDefaultVertion(vertion), 'D:\\ATaoCode\\MHIS\\MHIS.Web\\Asset\\scripts\\site\\MapView\\');
+
+    });
+}
+
+// 沃特玛地图实时监控
+{
+    var WTM = require('./build/WTMMapView/build.js');
+
+
+    task('WTM', {async: true}, function (vertion) {
+        WTM.build(complete, '1V', 'WTM', getDefaultVertion(vertion), 'D:\\WTMCode\\WEB\\assets\\scripts\\sites\\');
+
+    });
+}
+
+
+// 沃特玛地图历史轨迹
+{
+    var WTMT = require('./build/Track/build.js');
+
+    task('WTMT', {async: true}, function (vertion) {
+        WTMT.build(complete, '17vvv', 'WTMTrack', getDefaultVertion(vertion), 'D:\\WTMCode\\WEB\\assets\\scripts\\sites\\');
+
+    });
+}
+
+
+// 渣土车 v2.1版本
+var Muck = require('./build/Muck/build.js');
+// 角色开始设计
+{
+    task('MR', {async: true}, function (vertion) {
+        Muck.build(complete, '3', 'Role', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码-V2.1\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+
+    task('MU', {async: true}, function (vertion) {
+        Muck.build(complete, '5', 'User', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码-V2.1\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+
+
+    task('MS', {async: true}, function (vertion) {
+        Muck.build(complete, '9', 'Site', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码-V2.1\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+
+    task('MD', {async: true}, function (vertion) {
+        Muck.build(complete, 'h', 'Department', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+    task('ME', {async: true}, function (vertion) {
+        Muck.build(complete, '11', 'Enterprise', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码-V2.1\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+    task('MV', {async: true}, function (vertion) {
+        Muck.build(complete, '21', 'Vehicle', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+    task('MC', {async: true}, function (vertion) {
+        Muck.build(complete, '81', 'ContractManager', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+
+    task('MUnload', {async: true}, function (vertion) {
+        Muck.build(complete, '41', 'Unload', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码-V2.1\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+    task('MRM', {async: true}, function (vertion) {
+        Muck.build(complete, 'g1', 'RuleManage', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码-bht-V2.1\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+
+    task('MLineCheck', {async: true}, function (vertion) {
+        Muck.build(complete, '101', 'LineCheck', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码-V2.1\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+
+    task('MSelectTruck', {async: true}, function (vertion) {
+        Muck.build(complete, '200', 'SelectTruck', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+    task('MSelectRoad', {async: true}, function (vertion) {
+        Muck.build(complete, '400', 'SelectRoadRule', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码-V2.1\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+
+    task('MSelectTruckRule', {async: true}, function (vertion) {
+        Muck.build(complete, '200', 'SelectTruckRule', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+
+    task('Muck', {async: true}, function (vertion) {
+        WTM.build(complete, 'r', 'MapView', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码-V2.1\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+
+    task('BHT', {async: true}, function (vertion) {
+        WTM.build(complete, '23', 'MapView', getDefaultVertionBHT(vertion), 'E:\\vs_works\\荆州城管项目\\源代码-bht-V2.1\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+    task('GPSMuck', {async: true}, function (vertion) {
+        WTM.build(complete, '1b', 'MapView', getGPSVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+
+    task('MPW', {async: true}, function (vertion) {
+        Muck.build(complete, '401', 'PhotoWall', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+
+    task('MHS', {async: true}, function (vertion) {
+        Muck.build(complete, '801', 'HubSvr', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+
+    task('MST', {async: true}, function (vertion) {
+        Muck.build(complete, 'g01', 'SiteThen', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+    task('MVIM', {async: true}, function (vertion) {
+        Muck.build(complete, '1001', 'VehicleInfoMgr', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码-V2.1\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+    task('MRP', {async: true}, function (vertion) {
+        Muck.build(complete, '2001', 'RemovalPermit', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码-V2.1\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+    task('MFP', {async: true}, function (vertion) {
+        Muck.build(complete, '4001', 'FormalPermit', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码-V2.1\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+    task('MSS', {async: true}, function (vertion) {
+        Muck.build(complete, '8001', 'SiteSupervision', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码-V2.1\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+    task('MUS', {async: true}, function (vertion) {
+        Muck.build(complete, 'g001', 'UnloadSupervision', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码-V2.1\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+    task('MEG', {async: true}, function (vertion) {
+        Muck.build(complete, '10001', 'EntranceGuard', getDefaultVertion(vertion), 'E:\\vs_works\\荆州城管项目\\源代码-V2.1\\Web系统\\Muck.Web\\Asset\\scripts\\site\\');
+    });
+
+}
+
+

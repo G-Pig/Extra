@@ -1,0 +1,194 @@
+//上传车辆弹出层
+ES.Common.uploadEdit = ES.Evented.extend({
+    initialize: function (oParent, oOption, oDOption) {
+
+        //this.oGridOpt = oGridOpt;
+        this._oParent = oParent;
+        ES.setOptions(this, oOption);
+        this.oDOption = {};
+
+        this.initButton();
+
+        this.initDialog();
+
+        this.initEvent();
+
+        this.initUI();
+        this.newData;
+        var self = this;
+    },
+    initDialog: function () {
+        var oDOption = {
+            fixed: true,
+            align: 'right bottom',
+            title: '工地上报车辆',
+            content: template('UploadSiteTpl', this.oOption)
+        };
+        ES.extend(oDOption, this.oDOption)
+        var oDiaLog = dialog(oDOption);
+        this.oDialog = oDiaLog;
+        return oDiaLog;
+    },
+    showModal: function (oData) {
+        this.oBusData = oData;
+        this.oDialog.title('上传车辆');
+
+        this.oDialog.showModal();
+    },
+    // 初始画界面对象
+    initUI: function () {
+        var self = this;
+        // grid 查询
+        this.oGrid = new ES.Muck.uploadGrid(this, {
+            cContainer: '.ex-selcar-contet',
+            cGridContainer: 'dtGridContainer1',
+            cPagerContainer: ''
+        }, {
+            url: '/UploadSite/GetStatusByVehcleNo',
+            postData: {
+                exparameters: {
+                    UploadSiteId: this.oOption.UploadSiteId,
+                    EnterpriceId: this.oOption.EnterpriceId,
+                    VehcleNoS: this.oOption.Vehiclelis,
+                    SiteId: this.oOption.SiteId
+                }
+            },
+            jsonReader: {
+                root: "dataList"
+            },
+            multiselect:true,
+            rowNum: 100000,
+            loadError: function (xhr, status, error) {
+                console.log(xhr)
+            }
+        });
+
+        var nW = $(".rightContent").width() - $(".ex-selcar-sider").width() - 30;
+        var nH = $(".ex-selcar-contet").height() - $(".ex-selcar-contet>h2").height() - 79;
+
+        this.oGrid.initGrid({ width: nW, height: nH });
+
+        // 分析按钮
+        this.oAnaylisis = new ES.Muck.AnaylisisBtn(this, {});
+
+    },
+    initEvent: function () {
+        if (!this.oDialog) {
+            return;
+        }
+        var self = this;
+        this.oDialog.addEventListener('show', function () {
+            if (self.afterOpen) {
+                self.afterOpen();
+            }
+
+        });
+
+        this.oDialog.addEventListener('close', function () {
+            if (self.afterClose) {
+                self.afterClose();
+            }
+        });
+    },
+    //初始化确定取消按钮
+    initButton: function () {
+        var self = this;
+        var aoButton = [
+            {
+                value: ES.Lang.BaseDialog[1],
+                callback: function () {
+                    self.save();
+                    return false;
+                },
+                autofocus: true
+            },
+            {
+                value: ES.Lang.BaseDialog[2],
+                callback: function () {
+                    if (self.oOption.bRemove) {
+                        this.remove();
+                    }
+                    else {
+                        this.close();
+                    }
+                    return false;
+                }
+            }
+        ];
+        this.oDOption.button = aoButton;
+    },
+    afterOpen: function () {
+
+    },
+
+    save: function () {
+        var newArr = [], arrItem;
+        var ids = $("#dtGridContainer1").jqGrid("getGridParam", "selarrrow");//获取所有选择项
+        if (ids.length == 0) {
+            ES.aWarn("请选择车辆"); return
+        }
+        if (!$('#EnterpriceId1').val()) {
+            ES.aWarn("请选择企业"); return
+        }
+        for (var i = 0 ; i < ids.length; i++) {
+            rowData = $("#dtGridContainer1").jqGrid('getRowData', ids[i]);//获取所有选择项的具体数据
+            arrItem = {
+                VehicleId:rowData.Id,//表格里的选择的车牌号
+                EnterpriceId:rowData.ResourceTypeId + ",",//表格里的选择的车牌号
+            };
+            newArr.push(arrItem);//得到新的车辆数组
+        }
+        var oParams = {
+            SiteId: $('#siteId').val(),
+            EnterpriceId: $('#EnterpriceId1').val(),
+        };
+        ES.getData({ siteMod: oParams, Vehiclelis: newArr }, "/UploadSite/SetUploadSiteByVehcleNos", this.saveHandler, this);
+    },
+
+    saveHandler: function (oData) {
+        ES.Common.DialogEdit.prototype.saveHandler.call(this, oData);
+        ES.removeAn($(this.oDialog.node));
+
+        if (oData.IsSuccess) {
+            this._oParent.oGrid.query({});
+        }
+    },
+
+
+});
+//弹窗详情页的右边表格
+ES.Common.Detail = ES.Common.BaseDialog.extend({
+    afterOpen: function (id) {
+        var self = this;
+        this.oModelGrid = new ES.Muck.ModelGrid(this, {
+            // 容器
+            cContainer: '.ex-Permit-VehicleModel',
+            // grid id
+            cGridContainer: 'VehicleModelGridContainer',
+            // 分页菜单id
+            cPagerContainer: 'VehicleModelGridToolBarContainer',
+        }, {
+            url: '/UploadSite/GetUploadSite',
+
+            postData:{
+                exparameters: {
+                    UploadSiteId: this.oBusData
+                }
+            },
+            jsonReader: {
+                root: "dataList",
+            },
+            multiselect: false,
+            rowNum: 100000
+        });
+        var nW = $('.ex-Permit-VehicleModel').width();
+        var nH = $('.ex-Permit-VehicleModel').parent().height() - 135;
+
+        this.oModelGrid.initGrid({ width: nW, height: nH });
+    },
+    del: function (oData) {
+        this.oBusData = oData;
+        this.hideFooter();
+        this.oDialog.showModal();
+    }
+});

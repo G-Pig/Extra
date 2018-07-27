@@ -1,0 +1,163 @@
+/**
+ * 负责加载grid数据
+ *
+ * Created by liulin on 2017/8/31.
+ */
+
+ES.Muck.Grid = ES.Common.BaseJqGrid.extend({
+    initialize: function (oParent, oOption,oJqGridOption) {
+        ES.setOptions(this, oOption);
+
+        this._oParent = oParent;
+
+        this.aoCol = [];
+        this.setColumns();
+        this.initOn();
+        this.initUI();
+
+        this._countUrl = oJqGridOption.countUrl;
+
+        this.oSearchInput = $('#form-event-type-name');
+        this.oSearchBtn = $('#form-event-type-search');
+
+        var self = this;
+        ES.extend(
+            this.oJqGridOption,
+            oJqGridOption,
+            {
+                onSelectRow: function (cId, d, e) {
+                    var record = $(this).data('oData').dataList[parseInt(cId) - 1];
+                    self.initClick(e, record);
+                },
+                colModel: this.aoCol,
+                pager: '#' + this.oOption.cPagerContainer,
+                loadComplete: function (data) {
+                    self.gridData = data;
+                    //缓存数据到控件
+                    $(this).data('oData', data);
+                },
+                gridComplete: function () {
+                    $('.ec-btn-dropdown button').on('click', function (e) {
+                        $(this).parents('tr.ui-widget-content').siblings('tr.ui-widget-content').find('.ec-dropdown-content').hide(200)
+                        $(this).siblings().toggle('fast');
+                        var self = $(this);
+                        $("body").one("click", function () {//对document绑定一个影藏Div方法
+                            self.siblings().hide(200);
+                        });
+                        e.stopPropagation();
+                    })
+
+                }
+            });
+        //this.reflesh(this.oOption.nWidth, this.oOption.nHeight);
+        //this.initGrid();
+
+        this.initEvent();
+        //$('.ec-radio-inline>input#qualificationAll').attr("checked", true);
+    },
+
+    setColumns:function(){
+       var list =  [
+           { label: '处置证编号', name: 'SerialNum', editable: true , align: 'center',width:90},
+           { label: '处置证类型', name: 'TypeName', editable: true, align: 'center',width:70},
+           { label: '所属企业', name: 'CompanyName', editable: true , align: 'center',width:130},
+           { label: '工地', name: 'SiteName', editable: true, align: 'center' ,width:90},
+            { label: '消纳点', name: 'UnloadName', editable: true , align: 'center',width:80},
+            { label: '线路', name: 'Route', editable: true , align: 'center',width:120},
+            { label: '绑定车辆', name: '', editable: true, align: 'center',width:100,
+                formatter: function (cellValue, options, rowObject) {
+
+                    var content = '';
+
+                    content += '<button  class="ec-btn ec-btn-xs ec-btn-primary ec-radius Vehicle" ' + RemovalAuth.removalBind + '><i class="ec-icon-search"></i>  绑定车辆查看</button>';
+                    return content;
+                }
+            },
+            { label: '有效期', name: '', editable: true,  align: 'center',width:120,
+                formatter: function (cellValue, options, rowObject) {
+
+                    var content=rowObject.DayStart + ' 至 ' + rowObject.DayEnd;
+                    return content;
+                }},
+           { label: '处置证状态', name: 'Status', editable: true , align: 'center',width:50},
+            {
+                label: '操作',
+                name: '',
+                classes:'visable',
+                width: 150,
+                align: 'center',title: false,
+                formatter: function (cellValue, options, rowObject) {
+
+                    var content = '';
+
+                    content += '<button  class="ec-btn ec-btn-xs ec-btn-default ec-radius View" ' + RemovalAuth.removalView + '><i class="ec-icon-eye"></i>  查看</button>';
+                    content += '  ';
+                    content += '<button  class="ec-btn ec-btn-xs ec-btn-primary ec-radius Edit" ' + RemovalAuth.removalEdit + '><i class="ec-icon-edit"></i>  编辑</button>';
+                    // content += '  ';
+                    // content += '<button  class="ec-btn ec-btn-xs ec-btn-primary ec-radius Print"><i class="ec-icon-print"></i>  打印</button>';
+                    content += '  ';
+                    content += '<button  class="ec-btn ec-btn-xs ec-btn-danger ec-radius Del" ' + RemovalAuth.removalDel + '><i class="ec-icon-trash"></i>  删除</button>';
+                    return content;
+                }
+            }
+        ];
+
+        this.aoCol = list;
+    },
+
+    initClick: function (e, oModel) {
+        if (!e) {
+            return;
+        }
+        if ($(e.target).hasClass('View')) {
+            this.oViewD = new ES.PermitView.Dialog(this._oParent,
+                {bRemove:true,data:oModel.Id},
+                { title: "查看处置证详情"});
+            this.oViewD.showModal();
+        }
+        if ($(e.target).hasClass('Edit')) {
+            if(oModel.Type == 1){
+                //window.open('/RemovalPermit/FormalPermit?CompanyId='+oModel.CompanyId + '&PermitId='+oModel.Id+'&edit=true');
+                var url = '/RemovalPermit/FormalPermit?CompanyId='+oModel.CompanyId + '&PermitId='+oModel.Id+'&edit=true';
+                window.top.oWebFrame.fire('TabPanel.addPage',{cId:"+"+oModel.CompanyId,cUrl:url,cName:'正式处置证编辑'});
+            }else if (oModel.Type == 2){
+                //window.open('/RemovalPermit/FormalPermit?CompanyId='+oModel.CompanyId + '&PermitId='+oModel.Id+'&edit=true&Temp=true');
+                var url = '/RemovalPermit/FormalPermit?CompanyId='+oModel.CompanyId + '&PermitId='+oModel.Id+'&edit=true&Temp=true';
+                window.top.oWebFrame.fire('TabPanel.addPage',{cId:"-"+oModel.CompanyId,cUrl:url,cName:'临时处置证编辑'});
+            }
+
+        }
+        if ($(e.target).hasClass('Print')) {
+            location.href = "/RemovalPermit/ExportPdf/"+oModel.Id;
+        }
+        if ($(e.target).hasClass('Del')) {
+            this._oParent.oDelD = new ES.Common.DelEntity(this._oParent,{bRemove:true,cUrl:'/RemovalPermit/Delete'},{
+                title: '删除操作-处置证',
+                content: '是否要删除当前处置证！'});
+            this._oParent.oDelD.del(oModel.Id);
+        }
+        if ($(e.target).hasClass('Vehicle')) {
+            this._oParent.oVehicleD = new ES.Common.VehicleDig(this._oParent,{bRemove:true},{
+                title: '绑定车辆查看',
+                content: '<div class="ex-Permit-VehicleModel"><table id="VehicleModelGridContainer" class="dt-grid-container" style="width:100%;"></table><div id="VehicleModelGridToolBarContainer" class="dt-grid-toolbar-container"></div>',
+                height:550,
+                width:1100
+            });
+
+            this._oParent.oVehicleD.del(oModel.Id);
+        }
+    },
+    resizeBody: function () {
+        var self = this;
+        $(window).resize(function () {
+            $(self.oOption.cContainer).css("width", $(window).width() - $('.ex-layout-sider').width()+'px');
+            $(self.oOption.cContainer).css({ height: $(window).height() });
+            $('#' + self.oOption.cGridContainer).setGridWidth($(self.oOption.cContainer).width());
+            $('#' + self.oOption.cGridContainer).setGridHeight($(self.oOption.cContainer).height() - $('.ex-permit-batch').height() - $('.ex-layout-form-search').height() - 85);
+        });
+
+    },
+});
+
+
+

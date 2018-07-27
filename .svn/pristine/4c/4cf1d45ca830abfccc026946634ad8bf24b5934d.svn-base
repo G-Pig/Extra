@@ -1,0 +1,81 @@
+/**
+ * 负责加载grid数据
+ *
+ * Created by liulin on 2017/8/31.
+ */
+
+ES.Muck.Grid = ES.Common.BaseJqGrid.extend({
+
+    setColumns:function(){
+       var list =  [
+            { label: '车牌号', name: 'VehicleNo', editable: true,sortable: false,width:60, align: 'center'},
+            { label: '企业名称', name: 'EnterpriseName', editable: true,sortable: false,width:120, align: 'center' },
+            { label: '所属区域', name: 'DistName', editable: true, sortable: false,width:60, align: 'center' },
+            { label: '是否密闭', name: 'isFrontDoor', editable: true, sortable: false,width:100, align: 'center',
+                formatter: function (val, opt, obj) {
+                    if(val){
+                        return "是"
+                    }else{
+                        return "否"
+                    }
+                }
+            },
+            { label: '是否超速', name: 'isOverSpeed', editable: true, sortable: false, align: 'center' ,width:80,
+                formatter: function (val, opt, obj) {
+                    if(val){
+                        return "是"
+                    }else{
+                        return "否"
+                    }
+                }
+            },
+            { label: '是否超载', name: 'isOverWeight', editable: true , sortable: false,width:75, align: 'center',
+                formatter: function (val, opt, obj) {
+                    if(val){
+                        return "是"
+                    }else{
+                        return "否"
+                    }
+                }
+            },
+            { label: '是否线路偏移', name: 'isOverline', editable: true , sortable: false, align: 'center',
+               formatter: function (val, opt, obj) {
+                   if(val){
+                       return "是"
+                   }else{
+                       return "否"
+                   }
+               }
+           },
+            {
+                label: '操作',
+                name: 'actions',
+                width: 100,
+                sortable: false,
+                align: 'center',
+                formatter: function (cellValue, options, rowObject) {
+                    var content = '';
+                    content += '<button  class="ec-btn ec-btn-xs ec-btn-default ec-radius view"' + btnAuth.aTrack + '><i class="ec-icon-eye view"></i>  查看轨迹</button>';
+                    return content;
+                }
+            }
+        ];
+
+        this.aoCol = list;
+    },
+    initClick: function (e, oModel) {
+        if (!e) {
+            return;
+        }
+        if ($(e.target).hasClass('view')) {
+            window.open("/MapView/TrackViewV2?PhoneNum=" + oModel.DeviceNo + "&VehicleNo=" + oGpsInfo.VehicleNo);
+            /*this._oParent.oDetailD = new ES.Common.Detail(this._oParent, { bRemove: true, cUrl: '/VehicleState/Detail'},
+                { title: '车辆详情 — 车牌号：'+oModel.VehicleNo }
+                );
+            this._oParent.oDetailD.showModal(oModel);*/
+        }
+    },
+
+});
+
+
